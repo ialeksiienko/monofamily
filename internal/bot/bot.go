@@ -2,8 +2,9 @@ package bot
 
 import (
 	"log/slog"
-	"monofinances/internal/repository"
-	"monofinances/internal/routes"
+	"main-service/internal/repository"
+	"main-service/internal/routes"
+
 	"time"
 
 	tb "gopkg.in/telebot.v3"
@@ -36,7 +37,7 @@ func NewTelegramBot(cfg TBConfig) *TelegramBot {
 		log: cfg.Log,
 	}
 
-	routes.SetupRoutes(b, cfg.DB)
+	routes.SetupRoutes(b, cfg.DB, cfg.Log)
 
 	return tgBot
 }

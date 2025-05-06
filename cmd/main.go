@@ -22,11 +22,11 @@ func main() {
 	log0 := setupLogger(cfg.Env)
 
 	dbPool, _, err := database.NewDBPool(database.DatabaseConfig{
-		Username: "golang",
-		Password: "golang",
-		Hostname: "localhost",
-		Port:     "5432",
-		DBName:   "golangtest",
+		Username: cfg.DB.User,
+		Password: cfg.DB.Pass,
+		Hostname: cfg.DB.Host,
+		Port:     cfg.DB.Port,
+		DBName:   cfg.DB.Name,
 	})
 
 	defer dbPool.Close()

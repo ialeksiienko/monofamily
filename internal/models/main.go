@@ -1,7 +1,7 @@
 package models
 
 type UsersToFamily struct {
-	ID       uint64 `json:"id"`
-	UserID   uint64 `json:"user_id"`
-	FamilyID uint64 `json:"family_id"`
+	ID       int `json:"id"`
+	UserID   int `json:"user_id"`
+	FamilyID int `json:"family_id"`
 }

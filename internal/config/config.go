@@ -10,7 +10,7 @@ type Config struct {
 	Env  string      `yaml:"env" env-default:"local"`
 	Bot  *BotConfig  `yaml:"bot"`
 	Mono *MonoConfig `yaml:"mono"`
-	db   *dbConfig   `yaml:"db"`
+	DB   *DBConfig   `yaml:"db"`
 }
 
 type BotConfig struct {
@@ -22,7 +22,7 @@ type MonoConfig struct {
 	ApiURL string `yaml:"mono_api_url"`
 }
 
-type dbConfig struct {
+type DBConfig struct {
 	User string `yaml:"db_user"`
 	Pass string `yaml:"db_pass"`
 	Host string `yaml:"db_host"`

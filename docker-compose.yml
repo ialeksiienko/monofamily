@@ -9,27 +9,27 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: test
-  rabbitmq:
-      image: rabbitmq:3-management-alpine
-      container_name: rabbitmq
-      ports:
-        - '5672:5672'
-        - '15672:15672'
-      restart: always
-  main-service:
-    build:
-      context: .
-      dockerfile: Dockerfile-main
-    ports:
-      - "50051:50051"
-    volumes:
-      - ./:/app
-    command:
-      - reflex -r --start-service '\.go$' go run ./main-service/cmd
+#  rabbitmq:
+#      image: rabbitmq:3-management-alpine
+#      container_name: rabbitmq
+#      ports:
+#        - '5672:5672'
+#        - '15672:15672'
+#      restart: always
+#  main-service:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+#    ports:
+#      - "50051:50051"
+#    volumes:
+#      - ./:/app
+#    command:
+#      - reflex -r --start-service '\.go$' go run ./main-service/cmd
 #  api-service:
 #    build:
 #      context: .
-#      dockerfile: api-service/Dockerfile-main
+#      dockerfile: api-service/Dockerfile
 #    volumes:
 #      - ./:/app
 #    ports:
@@ -37,7 +37,7 @@ services:
 #  bank-service:
 #    build:
 #      context: .
-#      dockerfile: bank-service/Dockerfile-main
+#      dockerfile: bank-service/Dockerfile
 #    volumes:
 #      - ./:/app
 #    ports:
