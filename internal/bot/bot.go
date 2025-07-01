@@ -1,47 +1,36 @@
 package bot
 
 import (
-	"log/slog"
-	"main-service/internal/repository"
-	"main-service/internal/routes"
-
 	"time"
 
 	tb "gopkg.in/telebot.v3"
 )
 
 type TelegramBot struct {
-	bot *tb.Bot
-	log *slog.Logger
+	Bot *tb.Bot
 }
 
 type TBConfig struct {
-	Log        *slog.Logger
 	BotToken   string
 	LongPoller int
-	UserToken  string
-	DB         *repository.Database
 }
 
-func NewTelegramBot(cfg TBConfig) *TelegramBot {
+func New(cfg TBConfig) (*TelegramBot, error) {
 	b, err := tb.NewBot(tb.Settings{
 		Token:  cfg.BotToken,
 		Poller: &tb.LongPoller{Timeout: time.Duration(cfg.LongPoller) * time.Second},
 	})
 	if err != nil {
-		panic("failed to build tg bot: " + err.Error())
+		return nil, err
 	}
 
 	tgBot := &TelegramBot{
-		bot: b,
-		log: cfg.Log,
+		Bot: b,
 	}
 
-	routes.SetupRoutes(b, cfg.DB, cfg.Log)
-
-	return tgBot
+	return tgBot, nil
 }
 
 func (tgbot TelegramBot) Start() {
-	tgbot.bot.Start()
+	tgbot.Bot.Start()
 }

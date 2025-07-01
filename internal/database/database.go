@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
+	"main-service/internal/sl"
 
 	"github.com/jackc/pgx/v4/pgxpool"
 )
@@ -16,30 +16,27 @@ type DatabaseConfig struct {
 	Hostname string
 	Port     string
 	DBName   string
+
+	Logger *sl.MyLogger
 }
 
-// DSN will get datasource name of the database configuration
 func (db DatabaseConfig) DSN() string {
 	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
 		db.Username, db.Password, db.Hostname, db.Port, db.DBName)
 }
 
-// Datastore is pgxpool.Pool wrapper
 type Datastore struct {
 	dbPool *pgxpool.Pool
 }
 
-// NewDatastore will create datastore instance
 func NewDatastore(pool *pgxpool.Pool) Datastore {
 	return Datastore{dbPool: pool}
 }
 
-// Pool method will get current pgxpool.Pool pointer
 func (ds Datastore) Pool() *pgxpool.Pool {
 	return ds.dbPool
 }
 
-// NewDBPool will create pool connection to database
 func NewDBPool(dbConfig DatabaseConfig) (*pgxpool.Pool, func(), error) {
 
 	f := func() {}
@@ -49,15 +46,14 @@ func NewDBPool(dbConfig DatabaseConfig) (*pgxpool.Pool, func(), error) {
 		return nil, f, errors.New("database connection error")
 	}
 
-	err = validateDBPool(pool)
+	err = validateDBPool(pool, dbConfig.Logger)
 	if err != nil {
 		return nil, f, err
 	}
 	return pool, func() { pool.Close() }, nil
 }
 
-// validateDBPool will pings the database and logs the current user and database
-func validateDBPool(pool *pgxpool.Pool) error {
+func validateDBPool(pool *pgxpool.Pool, logger *sl.MyLogger) error {
 	err := pool.Ping(context.Background())
 	if err != nil {
 		return errors.New("database connection error")
@@ -79,9 +75,9 @@ func validateDBPool(pool *pgxpool.Pool) error {
 	case err != nil:
 		return errors.New("database connection error")
 	default:
-		log.Printf("database version: %s\n", dbVersion)
-		log.Printf("current database user: %s\n", currentUser)
-		log.Printf("current database: %s\n", currentDatabase)
+		logger.Debug(fmt.Sprintf("database version: %s\n", dbVersion))
+		logger.Debug(fmt.Sprintf("current database user: %s\n", currentUser))
+		logger.Debug(fmt.Sprintf("current database: %s\n", currentDatabase))
 	}
 
 	return nil

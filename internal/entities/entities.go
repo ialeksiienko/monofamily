@@ -1,4 +1,4 @@
-package models
+package entities
 
 type UsersToFamily struct {
 	ID       int `json:"id"`

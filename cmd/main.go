@@ -1,13 +1,22 @@
 package main
 
 import (
-	"log"
+	"io"
 	"log/slog"
-	"main-service/internal/adapters/database"
 	"main-service/internal/bot"
 	"main-service/internal/config"
+	"main-service/internal/database"
+	"main-service/internal/handlers"
 	"main-service/internal/repository"
+	"main-service/internal/routes"
+	"main-service/internal/sl"
+	"main-service/internal/usecases"
 	"os"
+	"strings"
+	"time"
+
+	"github.com/rs/zerolog"
+	slogzerolog "github.com/samber/slog-zerolog"
 )
 
 const (
@@ -19,7 +28,7 @@ const (
 func main() {
 	cfg := config.MustLoad()
 
-	log0 := setupLogger(cfg.Env)
+	logger := setupLogger(cfg.Env)
 
 	dbPool, _, err := database.NewDBPool(database.DatabaseConfig{
 		Username: cfg.DB.User,
@@ -27,49 +36,93 @@ func main() {
 		Hostname: cfg.DB.Host,
 		Port:     cfg.DB.Port,
 		DBName:   cfg.DB.Name,
+
+		Logger: logger,
 	})
+	if err != nil {
+		logger.Fatal("unexpected error while tried to connect to database", slog.String("error", err.Error()))
+	}
 
 	defer dbPool.Close()
 
-	if err != nil {
-		log.Fatalf("unexpected error while tried to connect to database: %v\n", err)
-	}
-
-	db := repository.New(dbPool, log0)
-
-	tgBot := bot.NewTelegramBot(bot.TBConfig{
-		Log:        log0,
+	tgBot, err := bot.New(bot.TBConfig{
 		BotToken:   cfg.Bot.Token,
 		LongPoller: cfg.Bot.LongPoller,
-		DB:         db,
 	})
+	if err != nil {
+		logger.Fatal("failed to build tg bot:", slog.String("error", err.Error()))
+	}
 
-	log0.Info("bot is running")
+	b := tgBot.Bot
+
+	repo := 	repository.New(dbPool, logger)
+	service := usecases.New(repo,repo, repo, logger)
+	handler := handlers.New(b, logger, service)
+
+	routes.SetupRoutes(b, handler)
+
+	go func() {
+		for {
+			err := service.InviteService.ClearInviteCodes()
+			if err != nil {
+				logger.Error("failed to clear invite codes", slog.String("error", err.Error()))
+			} else {
+				logger.Debug("invite codes cleared successfully")
+			}
+			time.Sleep(24 * time.Hour)
+		}
+	}()
+
+	logger.Info("bot is running")
 
 	tgBot.Start()
 }
 
-func setupLogger(env string) *slog.Logger {
-	var log *slog.Logger
+func setupLogger(env string) *sl.MyLogger {
+	var level zerolog.Level
+	var writer io.Writer
 
-	switch env {
+	var slogLevel slog.Level
+
+	switch strings.ToLower(env) {
 	case envLocal:
-		log = slog.New(
-			slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
+		level = zerolog.DebugLevel
+		slogLevel = slog.LevelDebug
+
+		writer = zerolog.ConsoleWriter{Out: os.Stdout}
 	case envDev:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}),
-		)
+		level = zerolog.DebugLevel
+		slogLevel = slog.LevelDebug
+
+		writer = os.Stdout
 	case envProd:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
-		)
+		level = zerolog.InfoLevel
+		slogLevel = slog.LevelInfo
+
+		writer = os.Stdout
 	default:
-		log = slog.New(
-			slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
-		)
+		level = zerolog.InfoLevel
+		slogLevel = slog.LevelInfo
+
+		writer = os.Stdout
 	}
 
-	return log
+	zlogger := zerolog.New(writer).Level(level).With().Timestamp().Logger()
+
+	handler := slogzerolog.Option{
+		Level:  slogLevel,
+		Logger: &zlogger,
+	}.NewZerologHandler()
+
+	return sl.New(slog.New(handler), func(msg string, attrs ...slog.Attr) {
+		zlogger.Fatal().Fields(attrsToMap(attrs)).Msg(msg)
+	})
+}
+
+func attrsToMap(attrs []slog.Attr) map[string]any {
+	m := make(map[string]any)
+	for _, attr := range attrs {
+		m[attr.Key] = attr.Value.Any()
+	}
+	return m
 }
