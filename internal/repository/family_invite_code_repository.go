@@ -16,7 +16,7 @@ func (pool Database) SaveFamilyInviteCode(userId int64, familyId int, code strin
 	var expiresAt time.Time
 
 	pool.logger.Debug(fmt.Sprintf("SQL: %s", q))
-	err := pool.DB.QueryRow(context.Background(), q, familyId, code, userId, time.Now().Add(48*time.Hour)).Scan(&expiresAt)
+	err := pool.DB.QueryRow(context.Background(), q, familyId, code, userId, time.Now().UTC().Add(48*time.Hour)).Scan(&expiresAt)
 	if err != nil {
 		pool.logger.Error("failed to save family invite code", slog.String("err", err.Error()),
 			slog.Int("user_id", int(userId)), slog.Int("family_id", familyId))
