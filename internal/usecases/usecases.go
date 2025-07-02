@@ -1,28 +1,30 @@
 package usecases
 
 import (
+	"crypto/rand"
+	"encoding/base32"
 	"main-service/internal/sl"
-	"math/rand"
+	"strings"
 )
 
 type Services struct {
 	UserService   *UserService
 	AdminService *AdminService
 	FamilyService *FamilyService
-	InviteService *InviteService
+	FamilyInviteCodeService *FamilyInviteCodeService
 }
 
 func New(
 	userRepo UserRepository,
 	familyRepo FamilyRepository,
-	inviteRepo InviteRepository,
+	familyInviteCodeRepo FamilyInviteCodeRepository,
 	sl *sl.MyLogger,
 ) *Services {
 	return &Services{
-		UserService:   NewUserService(userRepo, sl),
-		AdminService: NewAdminService(userRepo, familyRepo, sl),
-		FamilyService: NewFamilyService(familyRepo, sl),
-		InviteService: NewInviteService(inviteRepo, sl),
+		UserService:   NewUserService(userRepo, userRepo, userRepo, sl),
+		AdminService: NewAdminService(userRepo, familyRepo, familyInviteCodeRepo, sl),
+		FamilyService: NewFamilyService(userRepo, familyRepo, familyRepo, familyInviteCodeRepo, sl),
+		FamilyInviteCodeService: NewFamilyInviteCodeService(familyInviteCodeRepo, sl),
 	}
 }
 
@@ -30,13 +32,14 @@ const (
 	codeLength = 6
 )
 
-var generateInviteCode = func() string {
-	const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	b := make([]byte, codeLength)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+var generateInviteCode = func() (string, error) {
+	b := make([]byte, 5)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
 	}
-	return string(b)
+	code := base32.StdEncoding.EncodeToString(b)
+	code = strings.ToUpper(code)
+	return code[:codeLength], nil
 }
 

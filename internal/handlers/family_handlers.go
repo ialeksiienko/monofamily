@@ -28,6 +28,12 @@ func (h *Handler) processFamilyCreation(c tb.Context, familyName string) error {
 
 	code, expiresAt, err := h.usecases.FamilyService.Create(familyName, userID)
 	if err != nil {
+		var custErr *usecases.CustomError[struct{}]
+		if errors.As(err, &custErr) {
+			if custErr.Code == usecases.ErrCodeFailedToGenerateInviteCode {
+				return c.Send("Не вдалося створити новий код запрошення. Спробуйте пізніше.")
+			}
+		}
 		return c.Send(ErrInternalServerForUser.Error)
 	}
 

@@ -6,25 +6,40 @@ import (
 	"main-service/internal/sl"
 )
 
+type UserProvider interface {
+	GetAllUsersInFamily(familyID int) ([]entities.User, error)
+}
+
 type UserService struct {
-	userRepo UserRepository
+	userSaver UserSaver
+	userProvider UserProvider
+	userDeletor UserDeletor
 	sl *sl.MyLogger
 }
 
-func NewUserService(userRepo UserRepository, sl *sl.MyLogger) *UserService {
-	return &UserService{userRepo: userRepo, sl: sl}
+func NewUserService(
+	userSaver UserSaver,
+	userProvider UserProvider,
+	userDeletor UserDeletor,
+	sl *sl.MyLogger,
+) *UserService {
+	return &UserService{
+		userSaver: userSaver,
+		userDeletor: userDeletor,
+		sl: sl,
+	}
 }
 
 func (s *UserService) Register(user *entities.User) (*entities.User, error) {
-	return s.userRepo.SaveUser(user)
+	return s.userSaver.SaveUser(user)
 }
 
 func (s *UserService) GetUsers(familyID int) ([]entities.User, error) {
-	return s.userRepo.GetAllUsersInFamily(familyID)
+	return s.userProvider.GetAllUsersInFamily(familyID)
 }
 
 func (s *UserService) DeleteUserFromFamily(familyID int, userID int64) error {
-	return s.userRepo.DeleteUserFromFamily(familyID, userID)
+	return s.userDeletor.DeleteUserFromFamily(familyID, userID)
 }
 
 type MemberInfo struct {
@@ -36,7 +51,7 @@ type MemberInfo struct {
 }
 
 func (s *UserService) GetMembersInfo(family *entities.Family, userID int64) ([]MemberInfo, error) {
-	users, err := s.userRepo.GetAllUsersInFamily(family.ID)
+	users, err := s.userProvider.GetAllUsersInFamily(family.ID)
 	if err != nil {
 		s.sl.Error("failed to get all users in family", slog.String("family_name", family.Name),slog.String("err", err.Error()))
 		return nil, err
@@ -71,7 +86,7 @@ func (s *UserService) LeaveFamily(family *entities.Family, userID int64) error {
 		}
 	}
 
-	err := s.userRepo.DeleteUserFromFamily(family.ID, userID)
+	err := s.userDeletor.DeleteUserFromFamily(family.ID, userID)
 	if err != nil {
 		s.sl.Error("failed to delete user from family", slog.Int("user_id", int(userID)), slog.Int("family_id", family.ID), slog.String("err", err.Error()))
 		return err

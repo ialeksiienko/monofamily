@@ -16,7 +16,7 @@ func (s *FamilyService) SelectFamily(userID int64, data string) (bool, *entities
 		return false, nil, err
 	}
 
-	f, err := s.familyRepo.GetFamilyBy("id", familyID)
+	f, err := s.familyProvider.GetFamilyByID(familyID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil, &CustomError[struct{}]{

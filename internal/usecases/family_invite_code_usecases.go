@@ -5,18 +5,21 @@ import (
 	"main-service/internal/sl"
 )
 
+type FamilyInviteCodeCleaner interface {
+	ClearInviteCodes() error
+}
 
-type InviteService struct {
-	inviteRepo InviteRepository
+type FamilyInviteCodeService struct {
+	familyInviteCodeCleaner FamilyInviteCodeCleaner
 	sl *sl.MyLogger
 }
 
-func NewInviteService(inviteRepo InviteRepository, sl *sl.MyLogger) *InviteService {
-	return &InviteService{inviteRepo: inviteRepo, sl: sl}
+func NewFamilyInviteCodeService(familyInviteCodeCleaner FamilyInviteCodeCleaner, sl *sl.MyLogger) *FamilyInviteCodeService {
+	return &FamilyInviteCodeService{familyInviteCodeCleaner: familyInviteCodeCleaner, sl: sl}
 }
 
-func (s *InviteService) ClearInviteCodes() error {
-	err := s.inviteRepo.ClearInviteCodes()
+func (s *FamilyInviteCodeService) ClearInviteCodes() error {
+	err := s.familyInviteCodeCleaner.ClearInviteCodes()
 	if err != nil {
 		s.sl.Error("failed to clear invite codes", slog.String("error", err.Error()))
 		return err

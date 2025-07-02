@@ -204,6 +204,9 @@ func (h *Handler) CreateNewInviteCode(c tb.Context) error {
 			if custErr.Code == usecases.ErrCodeNoPermission {
 				return c.Send("У вас немає прав на створення нового коду запрошення.")
 			}
+			if custErr.Code == usecases.ErrCodeFailedToGenerateInviteCode {
+				return c.Send("Не вдалося створити новий код запрошення. Спробуйте пізніше.")
+			}
 		}
 		return c.Send("Не вдалося створити код запрошення. Спробуйте ще раз пізніше.")
 	}

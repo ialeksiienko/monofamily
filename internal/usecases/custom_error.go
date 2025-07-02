@@ -11,6 +11,8 @@ const (
 
 	ErrCodeNoPermission ErrorCode = "no_permission"
 	ErrCodeCannotRemoveSelf ErrorCode = "cannot_remove_self"
+
+	ErrCodeFailedToGenerateInviteCode ErrorCode = "failed_to_generate_invite_code"
 )
 
 type CustomError[T any] struct {

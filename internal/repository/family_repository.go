@@ -2,7 +2,6 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"main-service/internal/entities"
 	"time"
@@ -52,7 +51,6 @@ func (pool Database) GetFamiliesByUserID(userID int64) ([]entities.Family, error
 	return families, nil
 }
 
-// GetFamilyByCode
 func (pool Database) GetFamilyByCode(code string) (*entities.Family, time.Time, error) {
 	q := `SELECT f.id, f.created_by, f.name, fi.expires_at
 		FROM family_invites fi
@@ -72,11 +70,11 @@ func (pool Database) GetFamilyByCode(code string) (*entities.Family, time.Time, 
 	return f, expiresAt, nil
 }
 
-func (pool Database) GetFamilyBy(by string, value any) (*entities.Family, error) {
-	q := fmt.Sprintf(`SELECT id, created_by, name FROM families WHERE %s = $1`, by)
+func (pool Database) GetFamilyByID(id int) (*entities.Family, error) {
+	q := `SELECT id, created_by, name FROM families WHERE id = $1`
 
 	f := new(entities.Family)
-	err := pool.DB.QueryRow(context.Background(), q, value).Scan(&f.ID, &f.CreatedBy, &f.Name)
+	err := pool.DB.QueryRow(context.Background(), q, id).Scan(&f.ID, &f.CreatedBy, &f.Name)
 	if err != nil {
 		pool.logger.Error("failed to get family", slog.String("err", err.Error()))
 		return nil, err
@@ -84,8 +82,6 @@ func (pool Database) GetFamilyBy(by string, value any) (*entities.Family, error)
 
 	return f, nil
 }
-
-//GetFamilyBy
 
 func (pool Database) DeleteFamily(familyID int) error {
 	ctx := context.Background()
