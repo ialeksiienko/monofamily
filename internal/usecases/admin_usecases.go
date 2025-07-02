@@ -2,7 +2,6 @@ package usecases
 
 import (
 	"log/slog"
-	"main-service/internal/sessions"
 	"main-service/internal/sl"
 	"time"
 )
@@ -25,86 +24,32 @@ func NewAdminService(
 	}
 }
 
-func(s *AdminService) RemoveMember(userID, memberID int64 ) error{
-	us, exists := sessions.GetUserState(userID)
-	if !exists || us.Family == nil {
-		return &CustomError[struct{}]{
-			Msg: "user not in family",
-			Code: ErrCodeUserNotInFamily,
-		}
-	}
-
-	if userID != us.Family.CreatedBy {
-		return &CustomError[struct{}]{
-			Msg: "no permission",
-			Code: ErrCodeNoPermission,
-		}
-	}
-
-	if userID == memberID {
-		return &CustomError[struct{}]{
-			Msg: "cannot remove self",
-			Code: ErrCodeCannotRemoveSelf,
-		}
-	}
-
-	err := s.userRepo.DeleteUserFromFamily(us.Family.ID, memberID)
+func(s *AdminService) RemoveMember(familyID int, memberID int64 ) error{
+	err := s.userRepo.DeleteUserFromFamily(familyID, memberID)
 	if err != nil {
-		s.sl.Error("unable to delete user from family", slog.String("error", err.Error()))
+		s.sl.Error("unable to delete member from family", slog.Int("member_id", int(memberID)), slog.Int("family_id", familyID), slog.String("error", err.Error()))
 		return err
 	}
 
 	return nil
 }
 
-func (s *AdminService) DeleteFamily(userID int64) error {
-	us, exists := sessions.GetUserState(userID)
-	if !exists || us.Family == nil {
-		return &CustomError[struct{}]{
-			Msg: "user not in family",
-			Code: ErrCodeUserNotInFamily,
-		}
-	}
-
-	if userID != us.Family.CreatedBy {
-		return &CustomError[struct{}]{
-			Msg: "no permission",
-			Code: ErrCodeNoPermission,
-		}
-	}
-
-	err := s.familyRepo.DeleteFamily(us.Family.ID)
+func (s *AdminService) DeleteFamily(familyID int) error {
+	err := s.familyRepo.DeleteFamily(familyID)
 	if err != nil {
-		s.sl.Error("failed to delete family", slog.String("error", err.Error()))
+		s.sl.Error("failed to delete family", slog.Int("family_id", familyID), slog.String("error", err.Error()))
 		return err
 	}
-
-	sessions.DeleteUserState(userID)
 
 	return nil
 }
 
-func (s *AdminService) CreateNewFamilyCode(userID int64) (string,time.Time, error) {
-	us, exists := sessions.GetUserState(userID)
-	if !exists || us.Family == nil {
-		return "", time.Time{}, &CustomError[struct{}]{
-			Msg: "user not in family",
-			Code: ErrCodeUserNotInFamily,
-		}
-	}
-
-	if userID != us.Family.CreatedBy {
-		return "", time.Time{}, &CustomError[struct{}]{
-			Msg: "no permission",
-			Code: ErrCodeNoPermission,
-		}
-	}
-
+func (s *AdminService) CreateNewFamilyCode(familyID int, userID int64) (string,time.Time, error) {
 	code := generateInviteCode()
 
-	expiresAt, err := s.familyRepo.SaveFamilyInviteCode(userID, us.Family.ID, code)
+	expiresAt, err := s.familyRepo.SaveFamilyInviteCode(userID, familyID, code)
 	if err != nil {
-		s.sl.Error("failed to save family invite code", slog.String("error", err.Error()))
+		s.sl.Error("failed to save family invite code", slog.Int("created_by", int(userID)), slog.Int("family_id", familyID), slog.String("code", code), slog.String("error", err.Error()))
 		return "", time.Time{}, err
 	}
 

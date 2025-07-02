@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"fmt"
-	"log/slog"
 	"main-service/internal/sessions"
 	"main-service/internal/usecases"
 	"time"
@@ -28,7 +27,6 @@ func (h *Handler) processFamilyCreation(c tb.Context, familyName string) error {
 
 	code, expiresAt, err := h.usecases.FamilyService.Create(familyName, userID)
 	if err != nil {
-		h.sl.Error("unable to create family", slog.String("family", familyName), slog.Int("user_id", int(userID)))
 		return c.Send(ErrInternalServerForUser.Error)
 	}
 
@@ -83,22 +81,25 @@ func (h *Handler) processFamilyJoin(c tb.Context, code string) error {
 func (h *Handler) EnterMyFamily(c tb.Context) error {
 	userID := c.Sender().ID
 
-	families, err := h.usecases.FamilyService.Enter(userID)
+	families, err := h.usecases.FamilyService.GetFamilies(userID)
 	if err != nil {
-		switch e := err.(type) {
-		case *usecases.CustomError[struct{}]:
-			if e.Code == usecases.ErrCodeUserHasNoFamily {
-				inlineKeys := [][]tb.InlineButton{
-					{BtnCreateFamily}, {BtnJoinFamily},
-				}
-
-				return c.Send("Привіт! У тебе поки немає жодної сім'ї. Створи або приєднайся.", &tb.ReplyMarkup{
-					InlineKeyboard: inlineKeys,
-				})
-			}
-		}
 		return c.Send(ErrInternalServerForUser.Error)
 	}
+
+	if len(families) == 0 {
+		inlineKeys := [][]tb.InlineButton{
+			{BtnCreateFamily}, {BtnJoinFamily},
+		}
+
+		return c.Send("Привіт! У тебе поки немає жодної сім'ї. Створи або приєднайся.", &tb.ReplyMarkup{
+			InlineKeyboard: inlineKeys,
+		})
+	}
+
+	sessions.SetUserPageState(userID, &sessions.UserPageState{
+		Page:     0,
+		Families: families,
+	})
 
 	return showFamilyListPage(c, families, 0)
 }

@@ -1,9 +1,8 @@
 package handlers
 
 import (
-	"errors"
 	"fmt"
-	"main-service/internal/usecases"
+	"main-service/internal/sessions"
 	"strconv"
 
 	tb "gopkg.in/telebot.v3"
@@ -12,14 +11,13 @@ import (
 func (h *Handler) GetMembers(c tb.Context) error {
 	userID := c.Sender().ID
 
-	members, err := h.usecases.UserService.GetMembersInfo(userID)
+	us, exists := sessions.GetUserState(userID)
+	if !exists {
+		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
+	}
+
+	members, err := h.usecases.UserService.GetMembersInfo(us.Family, userID)
 	if err != nil {
-		var custErr *usecases.CustomError[struct{}]
-		if errors.As(err, &custErr) {
-			if custErr.Code == usecases.ErrCodeUserNotInFamily {
-				return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
-			}
-		}
 		return c.Send("Не вдалося отримати інформацію про учасників сім'ї.")
 	}
 
@@ -75,19 +73,21 @@ func (h *Handler) GetMembers(c tb.Context) error {
 func (h *Handler) LeaveFamily(c tb.Context) error {
 	userID := c.Sender().ID
 
-	err := h.usecases.UserService.LeaveFamily(userID)
+	us, exists := sessions.GetUserState(userID)
+	if !exists {
+		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
+	}
+
+	if us.Family.CreatedBy == userID {
+		return c.Send("Адміністратор не може вийти з сім'ї.")
+	}
+
+	err := h.usecases.UserService.LeaveFamily(us.Family.ID, userID)
 	if err != nil {
-		var custErr *usecases.CustomError[struct{}]
-		if errors.As(err, &custErr) {
-			switch custErr.Code {
-			case usecases.ErrCodeUserNotInFamily :
-				return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
-			case usecases.ErrCodeCannotRemoveSelf:
-				return c.Send("Адміністратор не може вийти з сім'ї.")
-			}
-		}
 		return c.Send("Не вдалося вийти з сім'ї. Спробуйте ще раз пізніше.")
 	}
+
+	sessions.DeleteUserState(userID)
 
 	msg, _ := h.bot.Send(c.Sender(), ".", &tb.SendOptions{
 		ReplyMarkup: &tb.ReplyMarkup{
@@ -120,19 +120,21 @@ func (h *Handler) DeleteMember(c tb.Context) error {
 		return c.Send("Некоректний ID.")
 	}
 
-	removeErr := h.usecases.AdminService.RemoveMember(userID, memberID)
+	us, exists := sessions.GetUserState(userID)
+	if !exists || us.Family == nil {
+		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
+	}
+
+	if userID != us.Family.CreatedBy {
+		return c.Send("У вас немає прав на видалення.")
+	}
+
+	if userID == memberID {
+		return c.Send("Ви не можете видалити себе.")
+	}
+
+	removeErr := h.usecases.AdminService.RemoveMember(us.Family.ID, memberID)
 	if removeErr != nil {
-		var custErr *usecases.CustomError[struct{}]
-		if errors.As(err, &custErr) {
-			switch custErr.Code {
-			case usecases.ErrCodeCannotRemoveSelf:
-				return c.Send("Ви не можете видалити себе.")
-			case usecases.ErrCodeNoPermission: 
-				return c.Send("У вас немає прав на видалення.")
-			case usecases.ErrCodeUserNotInFamily: 
-				return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
-			}
-		}
 		return c.Send("Не вдалося видалити користувача з сім'ї. Спробуйте ще раз пізніше.")
 	}
 
@@ -144,19 +146,21 @@ func (h *Handler) DeleteMember(c tb.Context) error {
 func (h *Handler) DeleteFamily(c tb.Context) error {
 	userID := c.Sender().ID
 
-	err := h.usecases.AdminService.DeleteFamily(userID)
+	us, exists := sessions.GetUserState(userID)
+	if !exists || us.Family == nil {
+		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
+	}
+
+	if userID != us.Family.CreatedBy {
+		return c.Send("У вас немає прав на видалення сім'ї.")
+	}
+
+	err := h.usecases.AdminService.DeleteFamily(us.Family.ID)
 	if err != nil {
-		var custErr *usecases.CustomError[struct{}]
-		if errors.As(err, &custErr) {
-			switch custErr.Code {
-			case usecases.ErrCodeNoPermission: 
-				return c.Send("У вас немає прав на видалення сім'ї.")
-			case usecases.ErrCodeUserNotInFamily: 
-				return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
-			}
-		}
 		return c.Send("Не вдалося видалити сім'ю. Спробуйте ще раз пізніше.")
 	}
+
+	sessions.DeleteUserState(userID)
 
 	msg, _ := h.bot.Send(c.Sender(), ".", &tb.SendOptions{
 		ReplyMarkup: &tb.ReplyMarkup{
@@ -178,22 +182,20 @@ func (h *Handler) DeleteFamily(c tb.Context) error {
 	)
 }
 
-// TODO: check timezone
-
 func (h *Handler) CreateNewInviteCode(c tb.Context) error {
 	userID := c.Sender().ID
 
-	code, expiresAt, err := h.usecases.AdminService.CreateNewFamilyCode(userID)
+	us, exists := sessions.GetUserState(userID)
+	if !exists || us.Family == nil {
+		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
+	}
+
+	if userID != us.Family.CreatedBy {
+		return c.Send("У вас немає прав на створення нового коду запрошення.")
+	}
+
+	code, expiresAt, err := h.usecases.AdminService.CreateNewFamilyCode(us.Family.ID, userID)
 	if err != nil {
-		var custErr *usecases.CustomError[struct{}]
-		if errors.As(err, &custErr) {
-			switch custErr.Code {
-			case usecases.ErrCodeNoPermission: 
-				return c.Send("У вас немає прав на створення нового коду запрошення.")
-			case usecases.ErrCodeUserNotInFamily: 
-				return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
-			}
-		}
 		return c.Send("Не вдалося створити код запрошення. Спробуйте ще раз пізніше.")
 	}
 

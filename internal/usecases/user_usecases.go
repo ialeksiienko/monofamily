@@ -3,7 +3,6 @@ package usecases
 import (
 	"log/slog"
 	"main-service/internal/entities"
-	"main-service/internal/sessions"
 	"main-service/internal/sl"
 )
 
@@ -36,18 +35,10 @@ type MemberInfo struct {
 	IsCurrent bool
 }
 
-func (s *UserService) GetMembersInfo(userID int64) ([]MemberInfo, error) {
-	us, exists := sessions.GetUserState(userID)
-	if !exists {
-		return nil, &CustomError[struct{}]{
-			Msg: "user not in family",
-			Code: ErrCodeUserNotInFamily,
-		}
-	}
-
-	users, err := s.userRepo.GetAllUsersInFamily(us.Family.ID)
+func (s *UserService) GetMembersInfo(family *entities.Family, userID int64) ([]MemberInfo, error) {
+	users, err := s.userRepo.GetAllUsersInFamily(family.ID)
 	if err != nil {
-		s.sl.Error("failed to get all users in family", slog.String("error", err.Error()))
+		s.sl.Error("failed to get all users in family", slog.String("family_name", family.Name),slog.String("err", err.Error()))
 		return nil, err
 	}
 
@@ -57,7 +48,7 @@ func (s *UserService) GetMembersInfo(userID int64) ([]MemberInfo, error) {
 			ID: user.ID,
 			Username: user.Username,
 			Firstname: user.Firstname,
-			IsAdmin: us.Family.CreatedBy == userID,
+			IsAdmin: family.CreatedBy == userID,
 			IsCurrent: user.ID == userID,
 		}
 	}
@@ -65,28 +56,12 @@ func (s *UserService) GetMembersInfo(userID int64) ([]MemberInfo, error) {
 	return members, nil
 }
 
-func (s *UserService) LeaveFamily(userID int64) error {
-	us, exists := sessions.GetUserState(userID)
-	if !exists {
-		return &CustomError[struct{}]{
-			Msg: "user not in family",
-			Code: ErrCodeUserNotInFamily,
-		}
-	}
-
-	if us.Family.CreatedBy == userID {
-		return &CustomError[struct{}]{
-			Msg: "admin cannot remove self from family",
-			Code: ErrCodeCannotRemoveSelf,
-		}
-	}
-
-	err := s.userRepo.DeleteUserFromFamily(us.Family.ID, userID)
+func (s *UserService) LeaveFamily(familyID int, userID int64) error {
+	err := s.userRepo.DeleteUserFromFamily(familyID, userID)
 	if err != nil {
+		s.sl.Error("failed to delete user from family", slog.Int("user_id", int(userID)), slog.Int("family_id", familyID), slog.String("err", err.Error()))
 		return err
 	}
-
-	sessions.DeleteUserState(userID)
 
 	return nil
 }

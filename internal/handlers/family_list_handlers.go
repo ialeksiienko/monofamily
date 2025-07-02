@@ -19,7 +19,7 @@ func (h *Handler) SelectMyFamily(c tb.Context) error {
 	userID := c.Sender().ID
 	data := c.Callback().Data
 
-	isAdmin, familyName, err := h.usecases.FamilyService.SelectFamily(userID, data)
+	isAdmin, family, err := h.usecases.FamilyService.SelectFamily(userID, data)
 	if err != nil {
 		var custErr *usecases.CustomError[struct{}]
 		if errors.As(err, &custErr) {
@@ -29,6 +29,10 @@ func (h *Handler) SelectMyFamily(c tb.Context) error {
 		}
 		return c.Send(ErrInternalServerForUser.Error())
 	}
+
+	sessions.SetUserState(userID, &sessions.UserState{
+		Family: family,
+	})
 
 	rows := []tb.Row{
 		menu.Row(MenuViewBalance),
@@ -45,60 +49,52 @@ func (h *Handler) SelectMyFamily(c tb.Context) error {
 
 	c.Delete()
 
-	return c.Send(fmt.Sprintf("Увійдено в сім’ю: *%s*\n\n📂 Меню сім'ї:", familyName), &tb.SendOptions{
+	return c.Send(fmt.Sprintf("Увійдено в сім’ю: *%s*\n\n📂 Меню сім'ї:", family.Name), &tb.SendOptions{
 		ParseMode: tb.ModeMarkdown,
 	}, menu)
 }
 
-// FIXME: fix algoritm
 func (h *Handler) NextPage(c tb.Context) error {
 	userID := c.Sender().ID
 
-	session, exists := sessions.GetUserPageSession(userID)
+	session, exists := sessions.GetUserPageState(userID)
 	if !exists {
 		return c.Send("Сесія не знайдена.")
 	}
 
-	page := session.Page + 1
-	total := len(session.Families)
-	start := page * familiesPerPage
-	end := start + familiesPerPage
-	if start >= total {
-		return c.Send("Це вже остання сторінка.")
-	}
-	if end > total {
-		end = total
-	}
-	session.Page = page
-	sessions.SetUserPageSession(userID, session)
+	session.Page++
+	sessions.SetUserPageState(userID, session)
 
-	return showFamilyListPage(c, session.Families, page)
+	return showFamilyListPage(c, session.Families, session.Page)
 }
 
 func (h *Handler) PrevPage(c tb.Context) error {
 	userID := c.Sender().ID
 
-	session, exists := sessions.GetUserPageSession(userID)
+	session, exists := sessions.GetUserPageState(userID)
 	if !exists {
 		return c.Send("Сесія не знайдена.")
 	}
 
-	if session.Page == 0 {
-		return c.Send("Це вже перша сторінка.")
-	}
-
 	session.Page--
-	sessions.SetUserPageSession(userID, session)
+	sessions.SetUserPageState(userID, session)
 
 	return showFamilyListPage(c, session.Families, session.Page)
 }
 
 func showFamilyListPage(c tb.Context, families []entities.Family, page int) error {
-	start := page * familiesPerPage
-	end := start + familiesPerPage
-	if end > len(families) {
-		end = len(families)
+	if page == 0 {
+		return c.Send("Це вже перша сторінка.")
 	}
+
+	start := page * familiesPerPage
+	totalFamilies := len(families)
+
+	if start >= totalFamilies {
+		return c.Send("Це вже остання сторінка.")
+	}
+
+	end := min(start+familiesPerPage, totalFamilies)
 	current := families[start:end]
 
 	var keyboard [][]tb.InlineButton
@@ -117,7 +113,7 @@ func showFamilyListPage(c tb.Context, families []entities.Family, page int) erro
 	if page > 0 {
 		paginationRow = append(paginationRow, BtnPrevPage)
 	}
-	if (page+1)*familiesPerPage < len(families) {
+	if (page+1)*familiesPerPage < totalFamilies {
 		paginationRow = append(paginationRow, BtnNextPage)
 	}
 	if len(paginationRow) > 0 {
@@ -129,4 +125,11 @@ func showFamilyListPage(c tb.Context, families []entities.Family, page int) erro
 	return c.Edit("Оберіть сім’ю:", &tb.ReplyMarkup{
 		InlineKeyboard: keyboard,
 	})
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

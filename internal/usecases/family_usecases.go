@@ -4,7 +4,6 @@ import (
 	"errors"
 	"log/slog"
 	"main-service/internal/entities"
-	"main-service/internal/sessions"
 	"main-service/internal/sl"
 	"time"
 
@@ -26,7 +25,7 @@ func (s *FamilyService) Create(familyName string, userID int64) (string, time.Ti
 		CreatedBy: userID,
 	})
 	if err != nil {
-		s.sl.Error("failed to create family", slog.Int("familyID", int(userID)), slog.String("err", err.Error()))
+		s.sl.Error("failed to create family", slog.Int("user_id", int(userID)), slog.String("err", err.Error()))
 		return "", time.Time{}, err
 	}
 
@@ -34,15 +33,15 @@ func (s *FamilyService) Create(familyName string, userID int64) (string, time.Ti
 
 	saveErr := s.familyRepo.SaveUserToFamily(f.ID, userID)
 	if saveErr != nil {
-		s.sl.Error("unable to save user to family", slog.Int("userID", int(userID)), slog.String("err", saveErr.Error()))
-		return "", time.Time{}, err
+		s.sl.Error("unable to save user to family", slog.Int("user_id", int(userID)), slog.String("err", saveErr.Error()))
+		return "", time.Time{}, saveErr
 	}
 
 	code := generateInviteCode()
 
 	expiresAt, err := s.familyRepo.SaveFamilyInviteCode(userID, f.ID, code)
 	if err != nil {
-		s.sl.Error("failed to save family invite code", slog.Int("familyID", int(userID)), slog.String("err", err.Error()))
+		s.sl.Error("failed to save family invite code", slog.Int("user_id", int(userID)), slog.String("err", err.Error()))
 		return "", time.Time{}, err
 	}
 
@@ -52,7 +51,7 @@ func (s *FamilyService) Create(familyName string, userID int64) (string, time.Ti
 func (s *FamilyService) Join(code string, userID int64) (string, error) {
 	f, expiresAt, err := s.familyRepo.GetFamilyByCode(code)
 	if err != nil {
-		s.sl.Error("failed to get family by code", slog.String("err", err.Error()))
+		s.sl.Error("failed to get family by code", slog.String("code", code), slog.String("err", err.Error()))
 		if errors.Is(err, pgx.ErrNoRows) {
 			s.sl.Debug("family not found with code")
 			return "", &CustomError[struct{}]{
@@ -64,7 +63,7 @@ func (s *FamilyService) Join(code string, userID int64) (string, error) {
 	}
 
 	if time.Now().After(expiresAt) {
-		s.sl.Error("expired family code")
+		s.sl.Error("expired family code", slog.String("code", code))
 		return "", &CustomError[time.Time]{
 			Data: expiresAt,
 			Msg:  "family invite code expired",
@@ -74,31 +73,19 @@ func (s *FamilyService) Join(code string, userID int64) (string, error) {
 
 	saveErr := s.familyRepo.SaveUserToFamily(f.ID, userID)
 	if saveErr != nil {
-		s.sl.Error("unable to save user to family", slog.Int("userID", int(userID)), slog.String("err", saveErr.Error()))
+		s.sl.Error("unable to save user to family", slog.Int("user_id", int(userID)), slog.Int("family_id", f.ID), slog.String("err", saveErr.Error()))
 		return "", saveErr
 	}
 
 	return f.Name, nil
 }
 
-func (s *FamilyService) Enter(userID int64) ([]entities.Family, error) {
+func (s *FamilyService) GetFamilies(userID int64) ([]entities.Family, error) {
 	families, err := s.familyRepo.GetFamiliesByUserID(userID)
 	if err != nil {
-		s.sl.Error("failed to get family by userID", slog.Int("userID", int(userID)), slog.String("err", err.Error()))
+		s.sl.Error("failed to get family by user id", slog.Int("user_id", int(userID)), slog.String("err", err.Error()))
 		return nil, err
 	}
-
-	if len(families) == 0 {
-		return nil, &CustomError[struct{}]{
-			Msg:  "user has no family",
-			Code: ErrCodeUserHasNoFamily,
-		}
-	}
-
-	sessions.SetUserPageSession(userID, &sessions.UPSessions{
-		Page:     0,
-		Families: families,
-	})
 
 	return families, nil
 }
