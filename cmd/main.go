@@ -63,7 +63,7 @@ func main() {
 
 	go func() {
 		for {
-			err := service.InviteService.ClearInviteCodes()
+			err := service.FamilyInviteCodeService.ClearInviteCodes()
 			if err != nil {
 				logger.Error("failed to clear invite codes", slog.String("error", err.Error()))
 			} else {
