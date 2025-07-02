@@ -87,5 +87,12 @@ func (s *FamilyService) GetFamilies(userID int64) ([]entities.Family, error) {
 		return nil, err
 	}
 
+	if len(families) == 0 {
+		return nil, &CustomError[struct{}]{
+			Msg: "user has no family",
+			Code: ErrCodeUserHasNoFamily,
+		}
+	}
+
 	return families, nil
 }

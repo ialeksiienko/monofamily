@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"errors"
 	"log/slog"
 	"main-service/internal/entities"
 	"main-service/internal/sessions"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrInternalServerForUser = fmt.Errorf("Сталася помилка на боці серверу, спробуйте пізніше.")
+	ErrInternalServerForUser = errors.New("Сталася помилка на боці серверу, спробуйте пізніше.")
 )
 
 type Handler struct {

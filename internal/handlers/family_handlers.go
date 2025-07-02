@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"main-service/internal/sessions"
 	"main-service/internal/usecases"
@@ -83,17 +84,19 @@ func (h *Handler) EnterMyFamily(c tb.Context) error {
 
 	families, err := h.usecases.FamilyService.GetFamilies(userID)
 	if err != nil {
-		return c.Send(ErrInternalServerForUser.Error)
-	}
-
-	if len(families) == 0 {
-		inlineKeys := [][]tb.InlineButton{
-			{BtnCreateFamily}, {BtnJoinFamily},
+		var custErr *usecases.CustomError[struct{}]
+		if errors.As(err, &custErr) {
+			if custErr.Code == usecases.ErrCodeUserHasNoFamily {
+				inlineKeys := [][]tb.InlineButton{
+					{BtnCreateFamily}, {BtnJoinFamily},
+				}
+		
+				return c.Send("Привіт! У тебе поки немає жодної сім'ї. Створи або приєднайся.", &tb.ReplyMarkup{
+					InlineKeyboard: inlineKeys,
+				})
+			}
 		}
-
-		return c.Send("Привіт! У тебе поки немає жодної сім'ї. Створи або приєднайся.", &tb.ReplyMarkup{
-			InlineKeyboard: inlineKeys,
-		})
+		return c.Send(ErrInternalServerForUser.Error)
 	}
 
 	sessions.SetUserPageState(userID, &sessions.UserPageState{

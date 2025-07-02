@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"main-service/internal/sessions"
+	"main-service/internal/usecases"
 	"strconv"
 
 	tb "gopkg.in/telebot.v3"
@@ -18,13 +20,13 @@ func (h *Handler) GetMembers(c tb.Context) error {
 
 	members, err := h.usecases.UserService.GetMembersInfo(us.Family, userID)
 	if err != nil {
+		var custErr *usecases.CustomError[struct{}]
+		if errors.As(err, &custErr) {
+			if custErr.Code == usecases.ErrCodeFamilyHasNoMembers {
+				return c.Send("У вашій сім'ї поки немає учасників.")
+			}
+		}
 		return c.Send("Не вдалося отримати інформацію про учасників сім'ї.")
-	}
-
-	membersLen := len(members)
-
-	if membersLen == 0 {
-		return c.Send("У вашій сім'ї поки немає учасників.")
 	}
 
 	c.Send("📋 Список учасників сім'ї:\n")
@@ -67,7 +69,7 @@ func (h *Handler) GetMembers(c tb.Context) error {
 		}
 	}
 
-	return c.Send(fmt.Sprintf("Всього учасників: %d", membersLen))
+	return c.Send(fmt.Sprintf("Всього учасників: %d", len(members)))
 }
 
 func (h *Handler) LeaveFamily(c tb.Context) error {
@@ -78,12 +80,14 @@ func (h *Handler) LeaveFamily(c tb.Context) error {
 		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
 	}
 
-	if us.Family.CreatedBy == userID {
-		return c.Send("Адміністратор не може вийти з сім'ї.")
-	}
-
-	err := h.usecases.UserService.LeaveFamily(us.Family.ID, userID)
+	err := h.usecases.UserService.LeaveFamily(us.Family, userID)
 	if err != nil {
+		var custErr *usecases.CustomError[struct{}]
+		if errors.As(err, &custErr) {
+			if custErr.Code == usecases.ErrCodeCannotRemoveSelf {
+				return c.Send("Адміністратор не може вийти з сім'ї.")
+			}
+		}
 		return c.Send("Не вдалося вийти з сім'ї. Спробуйте ще раз пізніше.")
 	}
 
@@ -125,16 +129,17 @@ func (h *Handler) DeleteMember(c tb.Context) error {
 		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
 	}
 
-	if userID != us.Family.CreatedBy {
-		return c.Send("У вас немає прав на видалення.")
-	}
-
-	if userID == memberID {
-		return c.Send("Ви не можете видалити себе.")
-	}
-
-	removeErr := h.usecases.AdminService.RemoveMember(us.Family.ID, memberID)
+	removeErr := h.usecases.AdminService.RemoveMember(us.Family, userID, memberID)
 	if removeErr != nil {
+		switch e := err.(type) {
+		case *usecases.CustomError[struct{}]:
+			if e.Code == usecases.ErrCodeNoPermission {
+				return c.Send("У вас немає прав на видалення.")
+			}
+			if e.Code == usecases.ErrCodeCannotRemoveSelf {
+				return c.Send("Ви не можете видалити себе.")
+			}
+		}
 		return c.Send("Не вдалося видалити користувача з сім'ї. Спробуйте ще раз пізніше.")
 	}
 
@@ -151,12 +156,14 @@ func (h *Handler) DeleteFamily(c tb.Context) error {
 		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
 	}
 
-	if userID != us.Family.CreatedBy {
-		return c.Send("У вас немає прав на видалення сім'ї.")
-	}
-
-	err := h.usecases.AdminService.DeleteFamily(us.Family.ID)
+	err := h.usecases.AdminService.DeleteFamily(us.Family, userID)
 	if err != nil {
+		var custErr *usecases.CustomError[struct{}]
+		if errors.As(err, &custErr) {
+			if custErr.Code == usecases.ErrCodeNoPermission {
+				return c.Send("У вас немає прав на видалення.")
+			}
+		}
 		return c.Send("Не вдалося видалити сім'ю. Спробуйте ще раз пізніше.")
 	}
 
@@ -190,12 +197,14 @@ func (h *Handler) CreateNewInviteCode(c tb.Context) error {
 		return c.Send("Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
 	}
 
-	if userID != us.Family.CreatedBy {
-		return c.Send("У вас немає прав на створення нового коду запрошення.")
-	}
-
-	code, expiresAt, err := h.usecases.AdminService.CreateNewFamilyCode(us.Family.ID, userID)
+	code, expiresAt, err := h.usecases.AdminService.CreateNewFamilyCode(us.Family, userID)
 	if err != nil {
+		var custErr *usecases.CustomError[struct{}]
+		if errors.As(err, &custErr) {
+			if custErr.Code == usecases.ErrCodeNoPermission {
+				return c.Send("У вас немає прав на створення нового коду запрошення.")
+			}
+		}
 		return c.Send("Не вдалося створити код запрошення. Спробуйте ще раз пізніше.")
 	}
 

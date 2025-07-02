@@ -42,6 +42,13 @@ func (s *UserService) GetMembersInfo(family *entities.Family, userID int64) ([]M
 		return nil, err
 	}
 
+	if len(users) == 0 {
+		return nil, &CustomError[struct{}]{
+			Msg: "family has not members",
+			Code: ErrCodeFamilyHasNoMembers,
+		}
+	}
+
 	members := make([]MemberInfo, len(users))
 	for i, user := range users {
 		members[i] = MemberInfo{
@@ -56,10 +63,17 @@ func (s *UserService) GetMembersInfo(family *entities.Family, userID int64) ([]M
 	return members, nil
 }
 
-func (s *UserService) LeaveFamily(familyID int, userID int64) error {
-	err := s.userRepo.DeleteUserFromFamily(familyID, userID)
+func (s *UserService) LeaveFamily(family *entities.Family, userID int64) error {
+	if family.CreatedBy == userID {
+		return &CustomError[struct{}]{
+			Msg: "admin cannot leave family",
+			Code: ErrCodeCannotRemoveSelf,
+		}
+	}
+
+	err := s.userRepo.DeleteUserFromFamily(family.ID, userID)
 	if err != nil {
-		s.sl.Error("failed to delete user from family", slog.Int("user_id", int(userID)), slog.Int("family_id", familyID), slog.String("err", err.Error()))
+		s.sl.Error("failed to delete user from family", slog.Int("user_id", int(userID)), slog.Int("family_id", family.ID), slog.String("err", err.Error()))
 		return err
 	}
 
