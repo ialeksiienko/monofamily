@@ -3,6 +3,7 @@ package handlers
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"main-service/internal/entities"
 	"main-service/internal/sessions"
 	"main-service/internal/usecases"
@@ -19,7 +20,13 @@ func (h *Handler) SelectMyFamily(c tb.Context) error {
 	userID := c.Sender().ID
 	data := c.Callback().Data
 
-	isAdmin, family, err := h.usecases.FamilyService.SelectFamily(userID, data)
+	familyID, err := strconv.Atoi(data)
+	if err != nil {
+		h.sl.Error("unable to convert family id string to int", slog.String("data", data))
+		return c.Send(ErrInternalServerForUser.Error())
+	}
+
+	isAdmin, family, err := h.usecases.FamilyService.SelectFamily(familyID, userID)
 	if err != nil {
 		var custErr *usecases.CustomError[struct{}]
 		if errors.As(err, &custErr) {
@@ -36,12 +43,14 @@ func (h *Handler) SelectMyFamily(c tb.Context) error {
 
 	rows := []tb.Row{
 		menu.Row(MenuViewBalance),
-		menu.Row(MenuViewMembers, MenuLeaveFamily),
+		menu.Row(MenuViewMembers),
 	}
 	if isAdmin {
 		rows = append(rows,
 			menu.Row(MenuCreateNewCode, MenuDeleteFamily),
 		)
+	} else {
+		rows = append(rows, menu.Row(MenuLeaveFamily))
 	}
 	rows = append(rows, menu.Row(MenuGoHome))
 
@@ -83,10 +92,6 @@ func (h *Handler) PrevPage(c tb.Context) error {
 }
 
 func showFamilyListPage(c tb.Context, families []entities.Family, page int) error {
-	if page == 0 {
-		return c.Send("Це вже перша сторінка.")
-	}
-
 	start := page * familiesPerPage
 	totalFamilies := len(families)
 

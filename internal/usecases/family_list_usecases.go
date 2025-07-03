@@ -2,20 +2,12 @@ package usecases
 
 import (
 	"errors"
-	"log/slog"
 	"main-service/internal/entities"
-	"strconv"
 
 	"github.com/jackc/pgx/v4"
 )
 
-func (s *FamilyService) SelectFamily(userID int64, data string) (bool, *entities.Family, error) {
-	familyID, err := strconv.Atoi(data)
-	if err != nil {
-		s.sl.Error("failed to convert family id to int", slog.String("error", err.Error()))
-		return false, nil, err
-	}
-
+func (s *FamilyService) SelectFamily(familyID int, userID int64) (bool, *entities.Family, error) {
 	f, err := s.familyProvider.GetFamilyByID(familyID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
