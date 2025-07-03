@@ -90,3 +90,29 @@ func (h *Handler) HandleText(c tb.Context) error {
 func (h *Handler) handleRegularText(c tb.Context) error {
 	return c.Send("Будь ласка, скористайтеся кнопками для взаємодії з ботом.")
 }
+
+func (h *Handler) GoHome(c tb.Context) error {
+	userID := c.Sender().ID
+
+	sessions.DeleteUserState(userID)
+
+	{
+		msg, _ := h.bot.Send(c.Sender(), ".", &tb.SendOptions{
+			ReplyMarkup: &tb.ReplyMarkup{
+				RemoveKeyboard: true,
+			},
+		})
+
+		h.bot.Delete(msg)
+	}
+
+	inlineKeys := [][]tb.InlineButton{
+		{BtnCreateFamily}, {BtnJoinFamily}, {BtnEnterMyFamily},
+	}
+
+	c.Delete()
+
+	return c.Send("Виберіть один з варіантів на клавіатурі.", &tb.ReplyMarkup{
+		InlineKeyboard: inlineKeys,
+	})
+}

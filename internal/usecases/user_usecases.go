@@ -8,6 +8,7 @@ import (
 
 type UserProvider interface {
 	GetAllUsersInFamily(familyID int) ([]entities.User, error)
+	GetUserByID(id int64) (*entities.User, error)
 }
 
 type UserService struct {
@@ -25,6 +26,7 @@ func NewUserService(
 ) *UserService {
 	return &UserService{
 		userSaver: userSaver,
+		userProvider: userProvider,
 		userDeletor: userDeletor,
 		sl: sl,
 	}
@@ -32,6 +34,10 @@ func NewUserService(
 
 func (s *UserService) Register(user *entities.User) (*entities.User, error) {
 	return s.userSaver.SaveUser(user)
+}
+
+func (s *UserService) GetUserByID(id int64) (*entities.User, error) {
+	return s.userProvider.GetUserByID(id)
 }
 
 func (s *UserService) GetUsers(familyID int) ([]entities.User, error) {
@@ -70,7 +76,7 @@ func (s *UserService) GetMembersInfo(family *entities.Family, userID int64) ([]M
 			ID: user.ID,
 			Username: user.Username,
 			Firstname: user.Firstname,
-			IsAdmin: family.CreatedBy == userID,
+			IsAdmin: family.CreatedBy == user.ID,
 			IsCurrent: user.ID == userID,
 		}
 	}

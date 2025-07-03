@@ -1,9 +1,9 @@
 package routes
 
 import (
-	tb "gopkg.in/telebot.v3"
 	"main-service/internal/handlers"
-	"main-service/internal/sessions"
+
+	tb "gopkg.in/telebot.v3"
 )
 
 func SetupRoutes(bot *tb.Bot, h *handlers.Handler) {
@@ -29,24 +29,39 @@ func SetupRoutes(bot *tb.Bot, h *handlers.Handler) {
 
 		bot.Handle(&handlers.BtnPrevPage, h.PrevPage)
 
-		bot.Handle(&tb.InlineButton{Unique: "go_home"}, goHome(bot))
+		bot.Handle(&tb.InlineButton{Unique: "go_home"}, h.GoHome)
 	}
 
 	// family menu
 	{
 		bot.Handle(&handlers.MenuViewMembers, h.GetMembers)
 
-		bot.Handle(&handlers.MenuLeaveFamily, h.LeaveFamily)
+		{
+			bot.Handle(&handlers.MenuLeaveFamily, h.LeaveFamily)
 
-		bot.Handle(&handlers.MenuGoHome, goHome(bot))
+			bot.Handle(&handlers.BtnLeaveFamilyNo, h.CancelLeaveFamily)
+			bot.Handle(&handlers.BtnLeaveFamilyYes, h.ProcessLeaveFamily)
+		}
+
 
 		// admin menu
+		{
+			bot.Handle(&tb.InlineButton{Unique: "delete_member"}, h.DeleteMember)
+			
+			bot.Handle(&handlers.BtnMemberDeleteNo, h.CancelMemberDeletion)
+			bot.Handle(&tb.InlineButton{Unique: "delete_member_yes"}, h.ProcessMemberDeletion)
+		}
 
-		bot.Handle(&tb.InlineButton{Unique: "delete_member"}, h.DeleteMember)
+		{
+			bot.Handle(&handlers.MenuDeleteFamily, h.DeleteFamily)
 
-		bot.Handle(&handlers.MenuDeleteFamily, h.DeleteFamily)
+			bot.Handle(&handlers.BtnFamilyDeleteNo, h.CancelFamilyDeletion)
+			bot.Handle(&handlers.BtnFamilyDeleteYes, h.ProcessFamilyDeletion)
+		}
 
 		bot.Handle(&handlers.MenuCreateNewCode, h.CreateNewInviteCode)
+
+		bot.Handle(&handlers.MenuGoHome, h.GoHome)
 	}
 
 	//bot.Handle("/family", func(c tb.Context) error {
@@ -221,32 +236,4 @@ func SetupRoutes(bot *tb.Bot, h *handlers.Handler) {
 	//	})
 	//	return nil
 	//})
-}
-
-var goHome = func(bot *tb.Bot) tb.HandlerFunc {
-	return func(c tb.Context) error {
-		userID := c.Sender().ID
-
-		sessions.DeleteUserState(userID)
-
-		{
-			msg, _ := bot.Send(c.Sender(), ".", &tb.SendOptions{
-				ReplyMarkup: &tb.ReplyMarkup{
-					RemoveKeyboard: true,
-				},
-			})
-
-			bot.Delete(msg)
-		}
-
-		inlineKeys := [][]tb.InlineButton{
-			{handlers.BtnCreateFamily}, {handlers.BtnJoinFamily}, {handlers.BtnEnterMyFamily},
-		}
-
-		c.Delete()
-
-		return c.Send("Вибери один з варіантів на клавіатурі.", &tb.ReplyMarkup{
-			InlineKeyboard: inlineKeys,
-		})
-	}
 }

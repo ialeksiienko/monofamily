@@ -53,6 +53,22 @@ func (pool Database) GetAllUsersInFamily(familyID int) ([]entities.User, error) 
 	return users, nil
 }
 
+func (pool Database) GetUserByID(id int64) (*entities.User, error) {
+	q := `SELECT id, username, firstname, joined_at
+		FROM users WHERE id = $1 `
+
+	
+	u := new(entities.User)
+
+	err := pool.DB.QueryRow(context.Background(), q, id).Scan(&u.ID, &u.Username, &u.Firstname, &u.JoinedAt)
+	if err != nil {
+		pool.logger.Error("failed to get family", slog.String("err", err.Error()))
+		return nil, err
+	}
+
+	return u, nil
+}
+
 func (pool Database) SaveUserToFamily(familyID int, userID int64) error {
 	q := `INSERT INTO users_to_families (user_id, family_id)
 			VALUES ($1, $2)`
