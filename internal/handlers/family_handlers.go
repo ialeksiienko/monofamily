@@ -41,7 +41,7 @@ func (h *Handler) processFamilyCreation(c tb.Context, familyName string) error {
 		{BtnEnterMyFamily},
 	}
 
-	return c.Send(fmt.Sprintf("Сім'я створена. Код запрошення:\n\n`%s`\n\nДійсний до — %s", code, expiresAt.Format("02.01.2006 15:04")), &tb.SendOptions{
+	return c.Send(fmt.Sprintf("Сім'я створена. Код запрошення:\n\n`%s`\n\nДійсний до — %s (час за Гринвічем, GMT)", code, expiresAt.Format("02.01.2006 15:04")), &tb.SendOptions{
 		ParseMode: tb.ModeMarkdown,
 	}, &tb.ReplyMarkup{InlineKeyboard: inlineKeys})
 }
@@ -57,7 +57,7 @@ func (h *Handler) JoinFamily(c tb.Context) error {
 func (h *Handler) processFamilyJoin(c tb.Context, code string) error {
 	userID := c.Sender().ID
 
-	if len(code) != 6 {
+	if utf8.RuneCountInString(code) != 6 {
 		return c.Send("Код запрошення має містити 6 символів.")
 	}
 
@@ -66,7 +66,7 @@ func (h *Handler) processFamilyJoin(c tb.Context, code string) error {
 		switch e := err.(type) {
 		case *usecases.CustomError[time.Time]:
 			if e.Code == usecases.ErrCodeFamilyCodeExpired {
-				return c.Send(fmt.Sprintf("Код запрошення не дійсний, закінчився - %s", e.Data.Format("02.01.2006 о 15:04")))
+				return c.Send(fmt.Sprintf("Код запрошення не дійсний, закінчився - %s (час за Гринвічем, GMT)", e.Data.Format("02.01.2006 о 15:04")))
 			}
 		case *usecases.CustomError[struct{}]:
 			if e.Code == usecases.ErrCodeFamilyNotFound {
@@ -97,7 +97,7 @@ func (h *Handler) EnterMyFamily(c tb.Context) error {
 					{BtnCreateFamily}, {BtnJoinFamily},
 				}
 		
-				return c.Send("Привіт! У тебе поки немає жодної сім'ї. Створи або приєднайся.", &tb.ReplyMarkup{
+				return c.Send("Привіт! У вас поки немає жодної сім'ї. Створіть або приєднайтеся.", &tb.ReplyMarkup{
 					InlineKeyboard: inlineKeys,
 				})
 			}
