@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE family_invites (
+CREATE TABLE family_invite_codes (
     id SERIAL PRIMARY KEY,
     family_id INT NOT NULL,
     code VARCHAR(6) NOT NULL UNIQUE,
@@ -13,4 +13,4 @@ CREATE TABLE family_invites (
 );
 
 -- +goose Down
-DROP TABLE family_invites;
+DROP TABLE family_invite_codes;

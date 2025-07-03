@@ -65,7 +65,7 @@ func main() {
 		for {
 			err := service.FamilyInviteCodeService.ClearInviteCodes()
 			if err != nil {
-				logger.Error("failed to clear invite codes", slog.String("error", err.Error()))
+				logger.Error(err.Error())
 			} else {
 				logger.Debug("invite codes cleared successfully")
 			}

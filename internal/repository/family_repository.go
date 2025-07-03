@@ -53,7 +53,7 @@ func (pool Database) GetFamiliesByUserID(userID int64) ([]entities.Family, error
 
 func (pool Database) GetFamilyByCode(code string) (*entities.Family, time.Time, error) {
 	q := `SELECT f.id, f.created_by, f.name, fi.expires_at
-		FROM family_invites fi
+		FROM family_invite_codes fi
 		JOIN families f ON f.id = fi.family_id
 		WHERE fi.code = $1`
 
@@ -94,6 +94,11 @@ func (pool Database) DeleteFamily(familyID int) error {
 	defer tx.Rollback(ctx)
 
 	_, err = tx.Exec(ctx, `DELETE FROM users_to_families WHERE family_id = $1`, familyID)
+	if err != nil {
+		return err
+	}
+
+	_, err = tx.Exec(ctx, `DELETE FROM family_invite_codes WHERE family_id = $1`, familyID)
 	if err != nil {
 		return err
 	}
