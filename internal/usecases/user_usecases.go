@@ -12,10 +12,10 @@ type UserProvider interface {
 }
 
 type UserService struct {
-	userSaver UserSaver
+	userSaver    UserSaver
 	userProvider UserProvider
-	userDeletor UserDeletor
-	sl *sl.MyLogger
+	userDeletor  UserDeletor
+	sl           *sl.MyLogger
 }
 
 func NewUserService(
@@ -25,10 +25,10 @@ func NewUserService(
 	sl *sl.MyLogger,
 ) *UserService {
 	return &UserService{
-		userSaver: userSaver,
+		userSaver:    userSaver,
 		userProvider: userProvider,
-		userDeletor: userDeletor,
-		sl: sl,
+		userDeletor:  userDeletor,
+		sl:           sl,
 	}
 }
 
@@ -52,20 +52,20 @@ type MemberInfo struct {
 	ID        int64
 	Username  string
 	Firstname string
-	IsAdmin bool
+	IsAdmin   bool
 	IsCurrent bool
 }
 
 func (s *UserService) GetMembersInfo(family *entities.Family, userID int64) ([]MemberInfo, error) {
 	users, err := s.userProvider.GetAllUsersInFamily(family.ID)
 	if err != nil {
-		s.sl.Error("failed to get all users in family", slog.String("family_name", family.Name),slog.String("err", err.Error()))
+		s.sl.Error("failed to get all users in family", slog.String("family_name", family.Name), slog.String("err", err.Error()))
 		return nil, err
 	}
 
 	if len(users) == 0 {
 		return nil, &CustomError[struct{}]{
-			Msg: "family has not members",
+			Msg:  "family has not members",
 			Code: ErrCodeFamilyHasNoMembers,
 		}
 	}
@@ -73,10 +73,10 @@ func (s *UserService) GetMembersInfo(family *entities.Family, userID int64) ([]M
 	members := make([]MemberInfo, len(users))
 	for i, user := range users {
 		members[i] = MemberInfo{
-			ID: user.ID,
-			Username: user.Username,
+			ID:        user.ID,
+			Username:  user.Username,
 			Firstname: user.Firstname,
-			IsAdmin: family.CreatedBy == user.ID,
+			IsAdmin:   family.CreatedBy == user.ID,
 			IsCurrent: user.ID == userID,
 		}
 	}
@@ -87,7 +87,7 @@ func (s *UserService) GetMembersInfo(family *entities.Family, userID int64) ([]M
 func (s *UserService) LeaveFamily(family *entities.Family, userID int64) error {
 	if family.CreatedBy == userID {
 		return &CustomError[struct{}]{
-			Msg: "admin cannot leave family",
+			Msg:  "admin cannot leave family",
 			Code: ErrCodeCannotRemoveSelf,
 		}
 	}

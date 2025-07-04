@@ -11,12 +11,12 @@ var (
 	BtnGoHome        = tb.InlineButton{Unique: "go_home", Text: "🏠 На головну", Data: "go_home"}
 
 	BtnLeaveFamilyYes = tb.InlineButton{Unique: "leave_family_yes", Text: "✅ Так", Data: "leave_family_yes"}
-	BtnLeaveFamilyNo = tb.InlineButton{Unique: "leave_family_no", Text: "❌ Ні", Data: "leave_family_no"}
+	BtnLeaveFamilyNo  = tb.InlineButton{Unique: "leave_family_no", Text: "❌ Ні", Data: "leave_family_no"}
 
 	BtnFamilyDeleteYes = tb.InlineButton{Unique: "delete_family_yes", Text: "✅ Так", Data: "delete_family_yes"}
-	BtnFamilyDeleteNo = tb.InlineButton{Unique: "delete_family_no", Text: "❌ Ні", Data: "delete_family_no"}
+	BtnFamilyDeleteNo  = tb.InlineButton{Unique: "delete_family_no", Text: "❌ Ні", Data: "delete_family_no"}
 
-	BtnMemberDeleteNo  = tb.InlineButton{Unique: "delete_member_no", Text: "❌ Ні", Data: "delete_member_no"}
+	BtnMemberDeleteNo = tb.InlineButton{Unique: "delete_member_no", Text: "❌ Ні", Data: "delete_member_no"}
 
 	BtnNextPage = tb.InlineButton{
 		Unique: "next_page",
@@ -26,7 +26,7 @@ var (
 		Unique: "prev_page",
 		Text:   "⬅️ Назад",
 	}
-	
+
 	MenuViewBalance = menu.Text("💰 Подивитися рахунок")
 	MenuViewMembers = menu.Text("👤 Учасники")
 	MenuLeaveFamily = menu.Text("🚪 Вийти з сім'ї")

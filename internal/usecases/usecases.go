@@ -8,9 +8,9 @@ import (
 )
 
 type Services struct {
-	UserService   *UserService
-	AdminService *AdminService
-	FamilyService *FamilyService
+	UserService             *UserService
+	AdminService            *AdminService
+	FamilyService           *FamilyService
 	FamilyInviteCodeService *FamilyInviteCodeService
 }
 
@@ -21,9 +21,9 @@ func New(
 	sl *sl.MyLogger,
 ) *Services {
 	return &Services{
-		UserService:   NewUserService(userRepo, userRepo, userRepo, sl),
-		AdminService: NewAdminService(userRepo, familyRepo, familyInviteCodeRepo, sl),
-		FamilyService: NewFamilyService(userRepo, familyRepo, familyRepo, familyInviteCodeRepo, sl),
+		UserService:             NewUserService(userRepo, userRepo, userRepo, sl),
+		AdminService:            NewAdminService(userRepo, familyRepo, familyInviteCodeRepo, sl),
+		FamilyService:           NewFamilyService(userRepo, familyRepo, familyRepo, familyInviteCodeRepo, sl),
 		FamilyInviteCodeService: NewFamilyInviteCodeService(familyInviteCodeRepo, sl),
 	}
 }
@@ -42,4 +42,3 @@ var generateInviteCode = func() (string, error) {
 	code = strings.ToUpper(code)
 	return code[:codeLength], nil
 }
-

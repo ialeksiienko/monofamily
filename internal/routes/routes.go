@@ -43,11 +43,10 @@ func SetupRoutes(bot *tb.Bot, h *handlers.Handler) {
 			bot.Handle(&handlers.BtnLeaveFamilyYes, h.ProcessLeaveFamily)
 		}
 
-
 		// admin menu
 		{
 			bot.Handle(&tb.InlineButton{Unique: "delete_member"}, h.DeleteMember)
-			
+
 			bot.Handle(&handlers.BtnMemberDeleteNo, h.CancelMemberDeletion)
 			bot.Handle(&tb.InlineButton{Unique: "delete_member_yes"}, h.ProcessMemberDeletion)
 		}

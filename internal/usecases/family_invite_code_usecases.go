@@ -11,7 +11,7 @@ type FamilyInviteCodeCleaner interface {
 
 type FamilyInviteCodeService struct {
 	familyInviteCodeCleaner FamilyInviteCodeCleaner
-	sl *sl.MyLogger
+	sl                      *sl.MyLogger
 }
 
 func NewFamilyInviteCodeService(familyInviteCodeCleaner FamilyInviteCodeCleaner, sl *sl.MyLogger) *FamilyInviteCodeService {

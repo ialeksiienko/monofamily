@@ -12,7 +12,7 @@ func (s *FamilyService) SelectFamily(familyID int, userID int64) (bool, *entitie
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return false, nil, &CustomError[struct{}]{
-				Msg: "family not found",
+				Msg:  "family not found",
 				Code: ErrCodeFamilyNotFound,
 			}
 		}

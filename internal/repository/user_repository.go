@@ -57,7 +57,6 @@ func (pool Database) GetUserByID(id int64) (*entities.User, error) {
 	q := `SELECT id, username, firstname, joined_at
 		FROM users WHERE id = $1 `
 
-	
 	u := new(entities.User)
 
 	err := pool.DB.QueryRow(context.Background(), q, id).Scan(&u.ID, &u.Username, &u.Firstname, &u.JoinedAt)

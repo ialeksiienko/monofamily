@@ -21,26 +21,26 @@ type FamilyProvider interface {
 }
 
 type FamilyService struct {
-	userSaver UserSaver
-	familyCreator FamilyCreator
-	familyProvider FamilyProvider
+	userSaver             UserSaver
+	familyCreator         FamilyCreator
+	familyProvider        FamilyProvider
 	familyInviteCodeSaver FamilyInviteCodeSaver
-	sl         *sl.MyLogger
+	sl                    *sl.MyLogger
 }
 
 func NewFamilyService(
 	userSaver UserSaver,
-	familyCreator FamilyCreator,  
+	familyCreator FamilyCreator,
 	familyProvider FamilyProvider,
 	familyInviteCodeSaver FamilyInviteCodeSaver,
 	sl *sl.MyLogger,
 ) *FamilyService {
 	return &FamilyService{
-		userSaver: userSaver,
-		familyCreator: familyCreator, 
-		familyProvider: familyProvider,
+		userSaver:             userSaver,
+		familyCreator:         familyCreator,
+		familyProvider:        familyProvider,
 		familyInviteCodeSaver: familyInviteCodeSaver,
-		sl: sl,
+		sl:                    sl,
 	}
 }
 
@@ -66,7 +66,7 @@ func (s *FamilyService) Create(familyName string, userID int64) (string, time.Ti
 	if err != nil {
 		s.sl.Error("failed to generate family invite code", slog.Int("family_id", f.ID), slog.String("err", err.Error()))
 		return "", time.Time{}, &CustomError[struct{}]{
-			Msg: "unable to generate invite code",
+			Msg:  "unable to generate invite code",
 			Code: ErrCodeFailedToGenerateInviteCode,
 		}
 	}
@@ -121,7 +121,7 @@ func (s *FamilyService) GetFamilies(userID int64) ([]entities.Family, error) {
 
 	if len(families) == 0 {
 		return nil, &CustomError[struct{}]{
-			Msg: "user has no family",
+			Msg:  "user has no family",
 			Code: ErrCodeUserHasNoFamily,
 		}
 	}

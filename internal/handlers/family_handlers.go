@@ -96,7 +96,7 @@ func (h *Handler) EnterMyFamily(c tb.Context) error {
 				inlineKeys := [][]tb.InlineButton{
 					{BtnCreateFamily}, {BtnJoinFamily},
 				}
-		
+
 				return c.Send("Привіт! У вас поки немає жодної сім'ї. Створіть або приєднайтеся.", &tb.ReplyMarkup{
 					InlineKeyboard: inlineKeys,
 				})

@@ -55,8 +55,8 @@ func main() {
 
 	b := tgBot.Bot
 
-	repo := 	repository.New(dbPool, logger)
-	service := usecases.New(repo,repo, repo, logger)
+	repo := repository.New(dbPool, logger)
+	service := usecases.New(repo, repo, repo, logger)
 	handler := handlers.New(b, logger, service)
 
 	routes.SetupRoutes(b, handler)

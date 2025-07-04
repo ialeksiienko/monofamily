@@ -28,7 +28,7 @@ type UserSaver interface {
 }
 
 type UserDeletor interface {
-	DeleteUserFromFamily( familyID int, userID int64) error
+	DeleteUserFromFamily(familyID int, userID int64) error
 }
 
 type FamilyInviteCodeSaver interface {

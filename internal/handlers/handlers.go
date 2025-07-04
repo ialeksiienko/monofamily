@@ -17,15 +17,15 @@ var (
 )
 
 type Handler struct {
-	bot     *tb.Bot
-	sl      *sl.MyLogger
+	bot      *tb.Bot
+	sl       *sl.MyLogger
 	usecases *usecases.Services
 }
 
 func New(bot *tb.Bot, sl *sl.MyLogger, usecases *usecases.Services) *Handler {
 	return &Handler{
-		bot:     bot,
-		sl:      sl,
+		bot:      bot,
+		sl:       sl,
 		usecases: usecases,
 	}
 }
