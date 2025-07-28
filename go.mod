@@ -1,4 +1,4 @@
-module main-service
+module monofamily
 
 go 1.23.0
 

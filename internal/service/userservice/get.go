@@ -1,0 +1,49 @@
+package userservice
+
+import (
+	"context"
+	"log/slog"
+	"monofamily/internal/entity"
+	"monofamily/internal/errorsx"
+)
+
+type MemberInfo struct {
+	ID        int64
+	Username  string
+	Firstname string
+	IsAdmin   bool
+	IsCurrent bool
+}
+
+func (s *UserService) GetFamilyMembersInfo(ctx context.Context, family *entity.Family, userID int64) ([]MemberInfo, error) {
+	users, err := s.userProvider.GetAllUsersInFamily(ctx, family.ID)
+	if err != nil {
+		s.sl.Error("failed to get all users in family", slog.String("family_name", family.Name), slog.String("err", err.Error()))
+		return nil, err
+	}
+
+	if len(users) == 0 {
+		return nil, errorsx.NewError("family has not members", errorsx.ErrCodeFamilyHasNoMembers, struct{}{})
+	}
+
+	members := make([]MemberInfo, len(users))
+	for i, user := range users {
+		members[i] = MemberInfo{
+			ID:        user.ID,
+			Username:  user.Username,
+			Firstname: user.Firstname,
+			IsAdmin:   family.CreatedBy == user.ID,
+			IsCurrent: user.ID == userID,
+		}
+	}
+
+	return members, nil
+}
+
+func (s *UserService) GetUserByID(ctx context.Context, id int64) (*entity.User, error) {
+	return s.userProvider.GetUserByID(ctx, id)
+}
+
+func (s *UserService) GetUsersByFamilyID(ctx context.Context, familyID int) ([]entity.User, error) {
+	return s.userProvider.GetAllUsersInFamily(ctx, familyID)
+}

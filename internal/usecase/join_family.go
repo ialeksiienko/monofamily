@@ -1,0 +1,24 @@
+package usecase
+
+import (
+	"context"
+	"monofamily/internal/errorsx"
+	"time"
+)
+
+func (uc *UseCase) JoinFamily(ctx context.Context, code string, userID int64) (string, error) {
+	family, expiresAt, err := uc.familyService.GetFamilyByCode(ctx, code)
+	if err != nil {
+		return "", err
+	}
+
+	if time.Now().After(expiresAt) {
+		return "", errorsx.NewError("family invite code expired", errorsx.ErrCodeFamilyCodeExpired, expiresAt)
+	}
+
+	if err := uc.userService.SaveUserToFamily(ctx, family.ID, userID); err != nil {
+		return "", err
+	}
+
+	return family.Name, nil
+}

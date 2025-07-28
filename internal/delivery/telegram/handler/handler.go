@@ -1,0 +1,47 @@
+package handler
+
+import (
+	"context"
+	"errors"
+	"monofamily/internal/entity"
+	"monofamily/internal/pkg/sl"
+	"monofamily/internal/service/userservice"
+	"time"
+
+	tb "gopkg.in/telebot.v3"
+)
+
+var (
+	ErrInternalServerForUser = errors.New("Сталася помилка на боці серверу, спробуйте пізніше.")
+)
+
+type UseCase interface {
+	CreateFamily(ctx context.Context, familyName string, userID int64) (*entity.Family, string, time.Time, error)
+	SelectFamily(ctx context.Context, familyID int, userID int64) (bool, *entity.Family, error)
+	RegisterUser(ctx context.Context, user *entity.User) (*entity.User, error)
+	LeaveFamily(ctx context.Context, family *entity.Family, userID int64) error
+	JoinFamily(ctx context.Context, code string, userID int64) (string, error)
+
+	GetFamilyMembersInfo(ctx context.Context, family *entity.Family, userID int64) ([]userservice.MemberInfo, error)
+	GetFamiliesByUserID(ctx context.Context, userID int64) ([]entity.Family, error)
+	GetUserByID(ctx context.Context, id int64) (*entity.User, error)
+
+	// admin usecases
+	RemoveMember(ctx context.Context, familyID int, userID int64, memberID int64) error
+	DeleteFamily(ctx context.Context, family *entity.Family, userID int64) error
+	CreateNewInviteCode(ctx context.Context, family *entity.Family, userID int64) (string, time.Time, error)
+}
+
+type Handler struct {
+	bot     *tb.Bot
+	sl      sl.Logger
+	usecase UseCase
+}
+
+func New(uc UseCase, bot *tb.Bot, sl sl.Logger) *Handler {
+	return &Handler{
+		bot:     bot,
+		sl:      sl,
+		usecase: uc,
+	}
+}

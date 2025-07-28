@@ -15,20 +15,20 @@ type Config struct {
 }
 
 type BotConfig struct {
-	Token      string `yaml:"bot_token"`
+	Token      string `yaml:"token"`
 	LongPoller int    `yaml:"long_poller"`
 }
 
 type MonoConfig struct {
-	ApiURL string `yaml:"mono_api_url"`
+	ApiURL string `yaml:"api_url"`
 }
 
 type DBConfig struct {
-	User string `yaml:"db_user"`
-	Pass string `yaml:"db_pass"`
-	Host string `yaml:"db_host"`
-	Port string `yaml:"db_port"`
-	Name string `yaml:"db_name"`
+	User string `yaml:"user"`
+	Pass string `yaml:"pass"`
+	Host string `yaml:"host"`
+	Port string `yaml:"port"`
+	Name string `yaml:"name"`
 }
 
 func MustLoad() *Config {
@@ -55,7 +55,7 @@ func fetchConfigPath() string {
 
 	flag.StringVar(&res, "config", "", "path to config file")
 	flag.Parse()
-	
+
 	if res == "" {
 		res = os.Getenv("CONFIG_PATH")
 	}

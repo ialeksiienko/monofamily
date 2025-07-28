@@ -1,0 +1,15 @@
+package usecase
+
+import (
+	"context"
+	"monofamily/internal/entity"
+	"time"
+)
+
+func (uc *UseCase) CreateNewInviteCode(ctx context.Context, family *entity.Family, userID int64) (string, time.Time, error) {
+	if err := uc.checkAdminPermission(family, userID); err != nil {
+		return "", time.Time{}, err
+	}
+
+	return uc.familyService.CreateNewInviteCode(ctx, family, userID)
+}

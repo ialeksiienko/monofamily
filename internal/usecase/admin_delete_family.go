@@ -1,0 +1,19 @@
+package usecase
+
+import (
+	"context"
+	"monofamily/internal/entity"
+)
+
+func (uc *UseCase) DeleteFamily(ctx context.Context, family *entity.Family, userID int64) error {
+	if err := uc.checkAdminPermission(family, userID); err != nil {
+		return err
+	}
+
+	err := uc.familyService.DeleteFamily(ctx, family.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
