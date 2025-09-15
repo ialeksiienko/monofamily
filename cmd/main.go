@@ -44,6 +44,7 @@ func main() {
 		BotToken:   cfg.Bot.Token,
 		LongPoller: cfg.Bot.LongPoller,
 		Pgsqlxpool: pgsqlxpool,
+		EncrKey:    cfg.Mono.EncryptKey,
 		Logger:     logger,
 	})
 	if err != nil {

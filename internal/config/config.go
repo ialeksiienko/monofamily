@@ -20,7 +20,8 @@ type BotConfig struct {
 }
 
 type MonoConfig struct {
-	ApiURL string `yaml:"api_url"`
+	EncryptKey [32]byte
+	ApiURL     string `yaml:"api_url"`
 }
 
 type DBConfig struct {
