@@ -13,7 +13,9 @@ var generateFamilyMenu = func(isAdmin, userTokenFound bool) []tb.Row {
 		rows = append(rows,
 			menu.Row(MenuCreateNewCode, MenuDeleteFamily),
 		)
-	} else if !userTokenFound {
+	}
+
+	if !userTokenFound {
 		rows = append(rows, menu.Row(
 			MenuAddBankToken),
 		)

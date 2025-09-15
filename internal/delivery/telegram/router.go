@@ -47,13 +47,7 @@ func SetupRoutes(bot *tb.Bot, h *handler.Handler) {
 			familyMenu.Handle(&handler.BtnLeaveFamilyYes, h.ProcessLeaveFamily)
 		}
 
-		// admin menu
-		{
-			familyMenu.Handle(&tb.InlineButton{Unique: "delete_member"}, h.DeleteMember)
-
-			familyMenu.Handle(&handler.BtnMemberDeleteNo, h.CancelMemberDeletion)
-			familyMenu.Handle(&tb.InlineButton{Unique: "delete_member_yes"}, h.ProcessMemberDeletion)
-		}
+		familyMenu.Handle(&handler.MenuAddBankToken, h.SaveUserBankToken)
 
 		{
 			familyMenu.Handle(&handler.MenuDeleteFamily, h.DeleteFamily)
@@ -65,6 +59,14 @@ func SetupRoutes(bot *tb.Bot, h *handler.Handler) {
 		familyMenu.Handle(&handler.MenuCreateNewCode, h.CreateNewInviteCode)
 
 		familyMenu.Handle(&handler.MenuGoHome, h.GoHome)
+
+		// admin menu
+		{
+			familyMenu.Handle(&tb.InlineButton{Unique: "delete_member"}, h.DeleteMember)
+
+			familyMenu.Handle(&handler.BtnMemberDeleteNo, h.CancelMemberDeletion)
+			familyMenu.Handle(&tb.InlineButton{Unique: "delete_member_yes"}, h.ProcessMemberDeletion)
+		}
 	}
 
 	//bot.Handle("/family", func(c tb.Context) error {
