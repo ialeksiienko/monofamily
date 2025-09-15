@@ -10,6 +10,7 @@ const (
 	StateNone UserTextStateType = iota
 	StateWaitingFamilyName
 	StateWaitingFamilyCode
+	StateWaitingBankToken
 )
 
 var (

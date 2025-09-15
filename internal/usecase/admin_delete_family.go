@@ -6,7 +6,7 @@ import (
 )
 
 func (uc *UseCase) DeleteFamily(ctx context.Context, family *entity.Family, userID int64) error {
-	if err := uc.checkAdminPermission(family, userID); err != nil {
+	if err := uc.checkAdminPermission(family.CreatedBy, userID); err != nil {
 		return err
 	}
 

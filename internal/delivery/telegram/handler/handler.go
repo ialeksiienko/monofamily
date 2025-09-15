@@ -13,11 +13,12 @@ import (
 
 var (
 	ErrInternalServerForUser = errors.New("Сталася помилка на боці серверу, спробуйте пізніше.")
+	ErrUnableToGetUserState  = errors.New("Не вдалося отримати стан поточної сім'ї. Спробуйте пізніше.")
 )
 
 type UseCase interface {
 	CreateFamily(ctx context.Context, familyName string, userID int64) (*entity.Family, string, time.Time, error)
-	SelectFamily(ctx context.Context, familyID int, userID int64) (bool, *entity.Family, error)
+	SelectFamily(ctx context.Context, familyID int, userID int64) (bool, bool, *entity.Family, error)
 	RegisterUser(ctx context.Context, user *entity.User) (*entity.User, error)
 	LeaveFamily(ctx context.Context, family *entity.Family, userID int64) error
 	JoinFamily(ctx context.Context, code string, userID int64) (string, error)
@@ -25,6 +26,8 @@ type UseCase interface {
 	GetFamilyMembersInfo(ctx context.Context, family *entity.Family, userID int64) ([]userservice.MemberInfo, error)
 	GetFamiliesByUserID(ctx context.Context, userID int64) ([]entity.Family, error)
 	GetUserByID(ctx context.Context, id int64) (*entity.User, error)
+
+	SaveBankToken(ctx context.Context, familyID int, userID int64, token string) (*entity.UserBankToken, error)
 
 	// admin usecases
 	RemoveMember(ctx context.Context, familyID int, userID int64, memberID int64) error

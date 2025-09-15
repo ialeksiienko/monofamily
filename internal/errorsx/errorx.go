@@ -3,8 +3,11 @@ package errorsx
 type ErrorCode string
 
 const (
-	ErrCodeFamilyCodeExpired  ErrorCode = "family_code_expired"
-	ErrCodeFamilyNotFound     ErrorCode = "family_not_found"
+	ErrCodeFamilyCodeExpired ErrorCode = "family_code_expired"
+
+	ErrCodeFamilyNotFound ErrorCode = "family_not_found"
+	ErrCodeTokenNotFound  ErrorCode = "token_not_found"
+
 	ErrCodeUserHasNoFamily    ErrorCode = "user_has_no_family"
 	ErrCodeFamilyHasNoMembers ErrorCode = "family_has_no_members"
 	ErrCodeUserNotInFamily    ErrorCode = "user_not_in_family"
@@ -25,6 +28,6 @@ func (e *CustomError[T]) Error() string {
 	return e.Msg
 }
 
-func NewError[T any](msg string, code ErrorCode, data T) *CustomError[T] {
+func New[T any](msg string, code ErrorCode, data T) *CustomError[T] {
 	return &CustomError[T]{Msg: msg, Code: code, Data: data}
 }

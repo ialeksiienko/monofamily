@@ -6,6 +6,10 @@ import (
 	"monofamily/internal/entity"
 )
 
+type familyCreator interface {
+	CreateFamily(ctx context.Context, inp *entity.Family) (*entity.Family, error)
+}
+
 func (s *FamilyService) Create(ctx context.Context, familyName string, userID int64) (*entity.Family, error) {
 	f, err := s.familyCreator.CreateFamily(ctx, &entity.Family{
 		Name:      familyName,

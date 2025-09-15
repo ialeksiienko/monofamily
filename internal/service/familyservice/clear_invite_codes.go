@@ -5,6 +5,10 @@ import (
 	"log/slog"
 )
 
+type familyInviteCodeCleaner interface {
+	ClearInviteCodes(ctx context.Context) error
+}
+
 func (s *FamilyService) ClearInviteCodes(ctx context.Context) error {
 	err := s.familyInviteCodeCleaner.ClearInviteCodes(ctx)
 	if err != nil {

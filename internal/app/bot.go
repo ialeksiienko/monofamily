@@ -4,11 +4,13 @@ import (
 	"context"
 	"monofamily/internal/adapter/database"
 	"monofamily/internal/adapter/database/familyrepo"
+	"monofamily/internal/adapter/database/tokenrepo"
 	"monofamily/internal/adapter/database/userrepo"
 	"monofamily/internal/delivery/telegram"
 	"monofamily/internal/delivery/telegram/handler"
 	"monofamily/internal/pkg/sl"
 	"monofamily/internal/service/familyservice"
+	"monofamily/internal/service/tokenservice"
 	"monofamily/internal/service/userservice"
 	"monofamily/internal/usecase"
 	"time"
@@ -22,6 +24,8 @@ type TelegramBot struct {
 
 	pgsqlxpool *pgxpool.Pool
 
+	encrKey [32]byte
+
 	sl sl.Logger
 }
 
@@ -30,6 +34,8 @@ type TBConfig struct {
 	LongPoller int
 
 	Pgsqlxpool *pgxpool.Pool
+
+	EncrKey [32]byte
 
 	Logger sl.Logger
 }
@@ -56,13 +62,16 @@ func (tgbot *TelegramBot) RunBot() {
 	logger := tgbot.sl
 
 	db := database.New(tgbot.pgsqlxpool)
+
 	familyrepo := familyrepo.New(db.DB, logger)
 	userrepo := userrepo.New(db.DB, logger)
+	tokenrepo := tokenrepo.New(db.DB, logger)
 
 	familyservice := familyservice.New(familyrepo, logger)
 	userservice := userservice.New(userrepo, logger)
+	tokenservice := tokenservice.New(tgbot.encrKey, tokenrepo, logger)
 
-	usecase := usecase.New(userservice, userservice, familyservice)
+	usecase := usecase.New(userservice, userservice, familyservice, tokenservice)
 
 	handler := handler.New(usecase, tgbot.bot, logger)
 

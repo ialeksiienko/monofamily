@@ -11,12 +11,12 @@ func (uc *UseCase) RemoveMember(ctx context.Context, familyID int, userID int64,
 		return err
 	}
 
-	if err := uc.checkAdminPermission(family, userID); err != nil {
+	if err := uc.checkAdminPermission(family.CreatedBy, userID); err != nil {
 		return err
 	}
 
 	if userID == memberID {
-		return errorsx.NewError("cannot remove self", errorsx.ErrCodeCannotRemoveSelf, struct{}{})
+		return errorsx.New("cannot remove self", errorsx.ErrCodeCannotRemoveSelf, struct{}{})
 	}
 
 	return uc.adminService.DeleteUserFromFamily(ctx, family.ID, memberID)

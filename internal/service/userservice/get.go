@@ -7,6 +7,11 @@ import (
 	"monofamily/internal/errorsx"
 )
 
+type userProvider interface {
+	GetAllUsersInFamily(ctx context.Context, familyID int) ([]entity.User, error)
+	GetUserByID(ctx context.Context, id int64) (*entity.User, error)
+}
+
 type MemberInfo struct {
 	ID        int64
 	Username  string
@@ -23,7 +28,7 @@ func (s *UserService) GetFamilyMembersInfo(ctx context.Context, family *entity.F
 	}
 
 	if len(users) == 0 {
-		return nil, errorsx.NewError("family has not members", errorsx.ErrCodeFamilyHasNoMembers, struct{}{})
+		return nil, errorsx.New("family has not members", errorsx.ErrCodeFamilyHasNoMembers, struct{}{})
 	}
 
 	members := make([]MemberInfo, len(users))

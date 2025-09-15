@@ -11,6 +11,10 @@ type WithTransaction interface {
 	WithTransaction(ctx context.Context, fn func(pgx.Tx) error) error
 }
 
+type familyDeletor interface {
+	DeleteFamily(ctx context.Context, fn pgx.Tx, familyID int) error
+}
+
 func (s *FamilyService) DeleteFamily(ctx context.Context, familyID int) error {
 	err := s.withTransaction.WithTransaction(ctx, func(tx pgx.Tx) error {
 		return s.familyDeletor.DeleteFamily(ctx, tx, familyID)

@@ -27,9 +27,10 @@ var (
 		Text:   "⬅️ Назад",
 	}
 
-	MenuViewBalance = menu.Text("💰 Подивитися рахунок")
-	MenuViewMembers = menu.Text("👤 Учасники")
-	MenuLeaveFamily = menu.Text("🚪 Вийти з сім'ї")
+	MenuViewBalance  = menu.Text("💰 Подивитися рахунок")
+	MenuViewMembers  = menu.Text("👤 Учасники")
+	MenuLeaveFamily  = menu.Text("🚪 Вийти з сім'ї")
+	MenuAddBankToken = menu.Text("➕ Додати токен банку")
 
 	MenuDeleteFamily  = menu.Text("🗑 Видалити сім’ю")
 	MenuCreateNewCode = menu.Text("🔐 Створити код запрошення")

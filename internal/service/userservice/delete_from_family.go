@@ -5,6 +5,10 @@ import (
 	"log/slog"
 )
 
+type userDeletor interface {
+	DeleteUserFromFamily(ctx context.Context, familyID int, userID int64) error
+}
+
 func (s *UserService) DeleteUserFromFamily(ctx context.Context, familyID int, userID int64) error {
 	err := s.userDeletor.DeleteUserFromFamily(ctx, familyID, userID)
 	if err != nil {

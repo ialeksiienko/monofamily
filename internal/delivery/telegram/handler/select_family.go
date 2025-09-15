@@ -28,7 +28,7 @@ func (h *Handler) SelectMyFamily(c tb.Context) error {
 		return c.Send(ErrInternalServerForUser.Error())
 	}
 
-	isAdmin, family, err := h.usecase.SelectFamily(ctx, familyID, userID)
+	isAdmin, hasToken, family, err := h.usecase.SelectFamily(ctx, familyID, userID)
 	if err != nil {
 		var custErr *errorsx.CustomError[struct{}]
 		if errors.As(err, &custErr) {
@@ -43,18 +43,7 @@ func (h *Handler) SelectMyFamily(c tb.Context) error {
 		Family: family,
 	})
 
-	rows := []tb.Row{
-		menu.Row(MenuViewBalance),
-		menu.Row(MenuViewMembers),
-	}
-	if isAdmin {
-		rows = append(rows,
-			menu.Row(MenuCreateNewCode, MenuDeleteFamily),
-		)
-	} else {
-		rows = append(rows, menu.Row(MenuLeaveFamily))
-	}
-	rows = append(rows, menu.Row(MenuGoHome))
+	rows := generateFamilyMenu(isAdmin, hasToken)
 
 	menu.Reply(rows...)
 
@@ -132,11 +121,4 @@ func showFamilyListPage(c tb.Context, families []entity.Family, page int) error 
 	return c.Edit("Оберіть сім’ю:", &tb.ReplyMarkup{
 		InlineKeyboard: keyboard,
 	})
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

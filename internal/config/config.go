@@ -1,7 +1,6 @@
 package config
 
 import (
-	"flag"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -51,14 +50,14 @@ func MustLoad() *Config {
 }
 
 func fetchConfigPath() string {
-	var res string
+	var res string = "/Users/illiaaleksiienko/go/src/monofinances/config/config.yml"
 
-	flag.StringVar(&res, "config", "", "path to config file")
-	flag.Parse()
+	// flag.StringVar(&res, "config", "", "path to config file")
+	// flag.Parse()
 
-	if res == "" {
-		res = os.Getenv("CONFIG_PATH")
-	}
+	// if res == "" {
+	// 	res = os.Getenv("CONFIG_PATH")
+	// }
 
 	return res
 }

@@ -13,7 +13,7 @@ func (h *Handler) HandleText(c tb.Context) error {
 	state := session.GetTextState(userID)
 
 	if state == session.StateNone {
-		h.sl.Warn("unexpected state in HandleText", slog.Int64("user_id", userID), slog.String("state", string(state)))
+		h.sl.Warn("unexpected state in HandleText", slog.Int64("user_id", userID), slog.Int("state", int(state)))
 		return h.handleRegularText(c)
 	}
 
@@ -27,6 +27,9 @@ func (h *Handler) HandleText(c tb.Context) error {
 
 	case session.StateWaitingFamilyCode:
 		return h.processFamilyJoin(c, strings.ToUpper(text))
+
+	case session.StateWaitingBankToken:
+		return h.processUserBankToken(c)
 
 	default:
 		return h.handleRegularText(c)

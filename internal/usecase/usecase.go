@@ -30,27 +30,38 @@ type familyService interface {
 	DeleteFamily(ctx context.Context, familyID int) error
 }
 
+type tokenService interface {
+	Save(ctx context.Context, familyID int, userID int64, token string) (*entity.UserBankToken, error)
+	Get(ctx context.Context, familyID int, userID int64) (bool, *entity.UserBankToken, error)
+
+	Encrypt(plaintext string) (string, error)
+	Decrypt(encrypted string) (string, error)
+}
+
 type UseCase struct {
 	userService   userService
 	adminService  adminService
 	familyService familyService
+	tokenService  tokenService
 }
 
 func New(
 	userService userService,
 	adminService adminService,
 	familyService familyService,
+	tokenService tokenService,
 ) *UseCase {
 	return &UseCase{
 		userService:   userService,
 		adminService:  adminService,
 		familyService: familyService,
+		tokenService:  tokenService,
 	}
 }
 
-func (uc *UseCase) checkAdminPermission(family *entity.Family, userID int64) error {
-	if userID != family.CreatedBy {
-		return errorsx.NewError("no permission", errorsx.ErrCodeNoPermission, struct{}{})
+func (uc *UseCase) checkAdminPermission(createdBy int64, userID int64) error {
+	if userID != createdBy {
+		return errorsx.New("no permission", errorsx.ErrCodeNoPermission, struct{}{})
 	}
 	return nil
 }

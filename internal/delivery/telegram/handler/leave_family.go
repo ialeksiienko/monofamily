@@ -23,10 +23,9 @@ func (h *Handler) ProcessLeaveFamily(c tb.Context) error {
 	userID := c.Sender().ID
 	ctx := context.Background()
 
-	us, exists := session.GetUserState(userID)
-	if !exists || us.Family == nil {
-		h.bot.Send(c.Sender(), "Ви не увійшли в сім'ю. Спочатку потрібно увійти в сім'ю.")
-		return h.GoHome(c)
+	us, ok := c.Get("user_state").(*session.UserState)
+	if !ok || us == nil {
+		return c.Send(ErrUnableToGetUserState.Error())
 	}
 
 	err := h.usecase.LeaveFamily(ctx, us.Family, userID)

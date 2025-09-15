@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"monofamily/internal/delivery/telegram/handler"
+	"monofamily/internal/middleware"
 
 	tb "gopkg.in/telebot.v3"
 )
@@ -32,35 +33,38 @@ func SetupRoutes(bot *tb.Bot, h *handler.Handler) {
 		bot.Handle(&tb.InlineButton{Unique: "go_home"}, h.GoHome)
 	}
 
+	familyMenu := bot.Group()
+	familyMenu.Use(middleware.CheckUserState(h.GoHome))
+
 	// family menu
 	{
-		bot.Handle(&handler.MenuViewMembers, h.GetMembers)
+		familyMenu.Handle(&handler.MenuViewMembers, h.GetMembers)
 
 		{
-			bot.Handle(&handler.MenuLeaveFamily, h.LeaveFamily)
+			familyMenu.Handle(&handler.MenuLeaveFamily, h.LeaveFamily)
 
-			bot.Handle(&handler.BtnLeaveFamilyNo, h.CancelLeaveFamily)
-			bot.Handle(&handler.BtnLeaveFamilyYes, h.ProcessLeaveFamily)
+			familyMenu.Handle(&handler.BtnLeaveFamilyNo, h.CancelLeaveFamily)
+			familyMenu.Handle(&handler.BtnLeaveFamilyYes, h.ProcessLeaveFamily)
 		}
 
 		// admin menu
 		{
-			bot.Handle(&tb.InlineButton{Unique: "delete_member"}, h.DeleteMember)
+			familyMenu.Handle(&tb.InlineButton{Unique: "delete_member"}, h.DeleteMember)
 
-			bot.Handle(&handler.BtnMemberDeleteNo, h.CancelMemberDeletion)
-			bot.Handle(&tb.InlineButton{Unique: "delete_member_yes"}, h.ProcessMemberDeletion)
+			familyMenu.Handle(&handler.BtnMemberDeleteNo, h.CancelMemberDeletion)
+			familyMenu.Handle(&tb.InlineButton{Unique: "delete_member_yes"}, h.ProcessMemberDeletion)
 		}
 
 		{
-			bot.Handle(&handler.MenuDeleteFamily, h.DeleteFamily)
+			familyMenu.Handle(&handler.MenuDeleteFamily, h.DeleteFamily)
 
-			bot.Handle(&handler.BtnFamilyDeleteNo, h.CancelFamilyDeletion)
-			bot.Handle(&handler.BtnFamilyDeleteYes, h.ProcessFamilyDeletion)
+			familyMenu.Handle(&handler.BtnFamilyDeleteNo, h.CancelFamilyDeletion)
+			familyMenu.Handle(&handler.BtnFamilyDeleteYes, h.ProcessFamilyDeletion)
 		}
 
-		bot.Handle(&handler.MenuCreateNewCode, h.CreateNewInviteCode)
+		familyMenu.Handle(&handler.MenuCreateNewCode, h.CreateNewInviteCode)
 
-		bot.Handle(&handler.MenuGoHome, h.GoHome)
+		familyMenu.Handle(&handler.MenuGoHome, h.GoHome)
 	}
 
 	//bot.Handle("/family", func(c tb.Context) error {

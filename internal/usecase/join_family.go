@@ -13,7 +13,7 @@ func (uc *UseCase) JoinFamily(ctx context.Context, code string, userID int64) (s
 	}
 
 	if time.Now().After(expiresAt) {
-		return "", errorsx.NewError("family invite code expired", errorsx.ErrCodeFamilyCodeExpired, expiresAt)
+		return "", errorsx.New("family invite code expired", errorsx.ErrCodeFamilyCodeExpired, expiresAt)
 	}
 
 	if err := uc.userService.SaveUserToFamily(ctx, family.ID, userID); err != nil {
