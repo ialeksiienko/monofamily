@@ -3,7 +3,7 @@ CREATE TABLE user_bank_tokens (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     family_id INT NOT NULL,
-    token VARCHAR(44) NOT NULL,
+    token VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT NOW(),
 
     CONSTRAINT fk_user_id FOREIGN KEY (user_id)

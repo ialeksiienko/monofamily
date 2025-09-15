@@ -1,9 +1,16 @@
 package validate
 
-import "regexp"
+import (
+	"github.com/go-playground/validator/v10"
+)
 
-var tokenRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]{44}$`)
+type bankToken struct {
+	token string `validate:"required,ascii,len=46"`
+}
 
 func IsValidBankToken(token string) bool {
-	return tokenRegex.MatchString(token)
+	v := validator.New()
+	t := bankToken{token}
+	err := v.Struct(t)
+	return err == nil
 }
