@@ -1,0 +1,41 @@
+package tokenservice
+
+import (
+	"context"
+	"monofamily/internal/entity"
+	"monofamily/internal/pkg/sl"
+)
+
+type TokenServiceIface interface {
+	Save(ctx context.Context, familyID int, userID int64, token string) (*entity.UserBankToken, error)
+	Get(ctx context.Context, familyID int, userID int64) (*entity.UserBankToken, error)
+}
+
+type tokenProvider interface {
+	Get(ctx context.Context, familyID int, userID int64) (*entity.UserBankToken, error)
+}
+
+type encryptor interface {
+	Encrypt(plaintext string) (string, error)
+	Decrypt(encrypted string) (string, error)
+}
+
+type TokenService struct {
+	encryptor
+	tokenSaver    tokenSaver
+	tokenProvider tokenProvider
+	sl            sl.Logger
+}
+
+func New(
+	key [32]byte,
+	tokenIface TokenServiceIface,
+	sl sl.Logger,
+) *TokenService {
+	return &TokenService{
+		encryptor:     NewEncrypt(key, sl),
+		tokenSaver:    tokenIface,
+		tokenProvider: tokenIface,
+		sl:            sl,
+	}
+}
