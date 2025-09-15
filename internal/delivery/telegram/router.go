@@ -1,13 +1,56 @@
 package telegram
 
 import (
+	"encoding/json"
 	"monofamily/internal/delivery/telegram/handler"
 	"monofamily/internal/middleware"
+	"os"
 
+	"golang.org/x/exp/slog"
 	tb "gopkg.in/telebot.v3"
 )
 
+type family struct {
+	Firstname string `json:"firstname"`
+	ID        int64  `json:"id"`
+}
+
+var allowedUsers map[int64]struct{}
+
+func init() {
+	content, err := os.ReadFile("family.json")
+	if err != nil {
+		slog.Error(err.Error())
+		os.Exit(1)
+	}
+
+	fam := []family{}
+
+	unmarshalErr := json.Unmarshal(content, &fam)
+	if unmarshalErr != nil {
+		slog.Error(unmarshalErr.Error())
+		os.Exit(1)
+	}
+
+	allowedUsers = make(map[int64]struct{})
+	for _, f := range fam {
+		allowedUsers[f.ID] = struct{}{}
+	}
+}
+
 func SetupRoutes(bot *tb.Bot, h *handler.Handler) {
+
+	bot.Use(func(hf tb.HandlerFunc) tb.HandlerFunc {
+		return func(c tb.Context) error {
+			userID := c.Sender().ID
+
+			if _, exists := allowedUsers[userID]; !exists {
+				return c.Send("У Вас немає прав для користування ботом, зв'яжіться з адміністратором.")
+			}
+
+			return hf(c)
+		}
+	})
 
 	bot.Handle("/start", h.Start)
 
