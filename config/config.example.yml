@@ -3,6 +3,7 @@ bot:
   bot_token: TELEGRAM_BOT_TOKEN
   long_poller: 10
 mono:
+  encrypt_key: secret_key
   mono_api_url: https://api.monobank.ua/personal/client-info
 db:
   db_user: admin
